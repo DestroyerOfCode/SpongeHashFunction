@@ -1,4 +1,4 @@
-package com.babkovic.hash;
+package com.babkovic.babkovic.hash;
 
 import java.io.ByteArrayOutputStream;
 

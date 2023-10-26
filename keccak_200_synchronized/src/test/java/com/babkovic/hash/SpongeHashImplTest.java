@@ -1,7 +1,7 @@
 package com.babkovic.hash;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import com.babkovic.babkovic.hash.SpongeHash;
+import com.babkovic.babkovic.hash.SpongePermutation;
 import com.babkovic.keccak_200.PermutationImpl;
 import com.babkovic.keccak_200.SpongeHashKeccak200Impl;
 import org.junit.jupiter.api.Assertions;

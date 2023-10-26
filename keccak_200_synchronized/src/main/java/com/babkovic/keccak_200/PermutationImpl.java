@@ -1,6 +1,6 @@
 package com.babkovic.keccak_200;
 
-import com.babkovic.hash.SpongePermutation;
+import com.babkovic.babkovic.hash.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation {
     @Override

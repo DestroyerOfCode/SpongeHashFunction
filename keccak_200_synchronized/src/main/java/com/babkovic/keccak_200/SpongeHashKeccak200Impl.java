@@ -2,8 +2,9 @@ package com.babkovic.keccak_200;
 
 import static com.babkovic.keccak_200.Constants.*;
 
-import com.babkovic.hash.SpongeHash;
-import com.babkovic.hash.SpongePermutation;
+import com.babkovic.babkovic.hash.SpongePermutation;
+import com.babkovic.babkovic.hash.SpongeHash;
+
 import java.util.Arrays;
 
 public class SpongeHashKeccak200Impl implements SpongeHash {
