@@ -1,11 +1,14 @@
-package com.babkovic.keccak_200;
+package com.babkovic.keccak200sync;
 
-import static com.babkovic.keccak_200.Constants.*;
-
-import com.babkovic.babkovic.hash.SpongePermutation;
-import com.babkovic.babkovic.hash.SpongeHash;
+import com.babkovic.api.SpongeHash;
+import com.babkovic.api.SpongePermutation;
 
 import java.util.Arrays;
+
+import static com.babkovic.keccak200sync.Constants.BITS_IN_BYTE;
+import static com.babkovic.keccak200sync.Constants.STATE_BYTE_LENGTH;
+import static com.babkovic.keccak200sync.Constants.b;
+import static com.babkovic.keccak200sync.Constants.r;
 
 public class SpongeHashKeccak200Impl implements SpongeHash {
 
@@ -43,9 +46,17 @@ public class SpongeHashKeccak200Impl implements SpongeHash {
       System.arraycopy(message, 0, paddedMessage, 0, message.length);
       return paddedMessage;
     }
+
+    int messageLengthOffsetInBytes = (message.length) % (r / BITS_IN_BYTE);
+    if (messageLengthOffsetInBytes != 0) {
+      // we need to add as many bytes as we need for the closes multiple of 168 bits (21 bytes resp.)
+      // we get that by message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)
+      final byte[] paddedMessage = new byte[message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)];
+      System.arraycopy(message, 0, paddedMessage, 0, message.length);
+      return paddedMessage;
+    }
     return message;
   }
-
 
   @Override
   public byte[] initState(final byte[] state) {

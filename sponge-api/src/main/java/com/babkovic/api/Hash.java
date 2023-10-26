@@ -1,6 +1,4 @@
-package com.babkovic.babkovic.hash;
-
-import java.io.ByteArrayOutputStream;
+package com.babkovic.api;
 
 public interface Hash {
     /**

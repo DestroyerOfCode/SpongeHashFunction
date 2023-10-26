@@ -1,4 +1,4 @@
-package com.babkovic.babkovic.hash;
+package com.babkovic.api;
 
 public interface Permutation {
 

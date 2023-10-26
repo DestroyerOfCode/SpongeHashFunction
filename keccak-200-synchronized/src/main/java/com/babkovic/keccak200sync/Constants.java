@@ -1,4 +1,4 @@
-package com.babkovic.keccak_200;
+package com.babkovic.keccak200sync;
 
 public class Constants {
   // l = {0, 1.. 6}
@@ -11,7 +11,7 @@ public class Constants {
   // the bus
   static final int b = (int) (25 * Math.pow(2, l));
   // this value is up to debate
-  static final int r = 168;
+  public static final int r = 168;
   static final int c = b - r;
 
   static final int STATE_BYTE_LENGTH = 25;
