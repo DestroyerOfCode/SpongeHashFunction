@@ -1,5 +1,10 @@
 package com.babkovic.hash;
 
+import static com.babkovic.keccak200sync.Constants.ROUNDS;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
 import com.babkovic.keccak200sync.PermutationImpl;
@@ -10,40 +15,54 @@ import org.junit.jupiter.api.TestInfo;
 
 class SpongeHashImplTest {
 
-  private final SpongePermutation spongePermutationImpl = new PermutationImpl();
-  private final SpongeHash spongeHashKeccak200 = new SpongeHashKeccak200Impl(spongePermutationImpl);
+  private final SpongePermutation spongePermutationImpl = spy(new PermutationImpl());
+  private final SpongeHash spongeHashKeccak200 =
+      spy(new SpongeHashKeccak200Impl(spongePermutationImpl));
 
   @Test
   void shouldNotThrowException_WhenCallingHashWithSmallMessage(final TestInfo testInfo) {
     // given
+    final int n = 1; // how many times will absorb phase iterate through message
     byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127
     };
 
     // when & then
-    Assertions.assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    verify(spongeHashKeccak200, times(n)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
 
   @Test
-  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf168(final TestInfo testInfo) {
+  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf168(
+      final TestInfo testInfo) {
     // given
+    final int n = 1; // how many times will absorb phase iterate through message
     byte[] message = {
-      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 127
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      127
     };
 
     // when & then
-    Assertions.assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    verify(spongeHashKeccak200, times(n)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(1);
   }
 
   @Test
-  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf168(final TestInfo testInfo) {
+  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf168(
+      final TestInfo testInfo) {
     // given
+    final int n = 2; // how many times will absorb phase iterate through message
     byte[] message = {
-      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 127, 1
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      127, 1
     };
 
     // when & then
-    Assertions.assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    assertDoesNotThrow(() -> spongeHashKeccak200.hash(message));
+    verify(spongeHashKeccak200, times(n)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
 
   @Test
@@ -56,7 +75,7 @@ class SpongeHashImplTest {
 
     // then
     for (int i = 0; i < retMessage.length; i++) {
-      Assertions.assertEquals(retMessage[i], message[i]);
+      assertEquals(retMessage[i], message[i]);
     }
   }
 
@@ -71,11 +90,11 @@ class SpongeHashImplTest {
 
     // then
     for (int i = 0; i < message.length; i++) {
-      Assertions.assertEquals(retMessage[i], message[i]);
+      assertEquals(retMessage[i], message[i]);
     }
 
     for (int i = message.length; i < retMessage.length; i++) {
-      Assertions.assertEquals(0, retMessage[i]);
+      assertEquals(0, retMessage[i]);
     }
   }
 
@@ -89,10 +108,10 @@ class SpongeHashImplTest {
 
     // then
     for (int i = 0; i < message.length; i++) {
-      Assertions.assertEquals(retMessage[i], message[i]);
+      assertEquals(retMessage[i], message[i]);
     }
     for (int i = message.length; i < retMessage.length; i++) {
-      Assertions.assertEquals(retMessage[i], 0);
+      assertEquals(retMessage[i], 0);
     }
   }
 
@@ -107,7 +126,7 @@ class SpongeHashImplTest {
                 "The test %s failed on asserting an exception", testInfo.getDisplayName()));
 
     // then
-    Assertions.assertEquals("Incorrect size of state. Should be 25.", ex.getMessage());
+    assertEquals("Incorrect size of state. Should be 25.", ex.getMessage());
   }
 
   @Test
@@ -120,7 +139,14 @@ class SpongeHashImplTest {
 
     // then
     for (byte b : state) {
-      Assertions.assertEquals(b, 0b01010101);
+      assertEquals(b, 0b01010101);
     }
+  }
+
+  private void verifyPermFuncsGetCalledNTimesRoundTimes(final int n) {
+    verify(spongePermutationImpl, times(n * ROUNDS)).theta(any());
+    verify(spongePermutationImpl, times(n * ROUNDS)).rhoPi(any());
+    verify(spongePermutationImpl, times(n * ROUNDS)).chi(any());
+    verify(spongePermutationImpl, times(n * ROUNDS)).iota(any(), anyInt());
   }
 }

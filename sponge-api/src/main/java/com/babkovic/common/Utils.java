@@ -11,5 +11,4 @@ public class Utils {
   }
 
   public static byte[] MOD_5 = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
-
 }

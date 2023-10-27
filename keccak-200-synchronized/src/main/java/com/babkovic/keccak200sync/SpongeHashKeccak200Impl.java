@@ -1,14 +1,13 @@
 package com.babkovic.keccak200sync;
 
-import com.babkovic.api.SpongeHash;
-import com.babkovic.api.SpongePermutation;
-
-import java.util.Arrays;
-
 import static com.babkovic.keccak200sync.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak200sync.Constants.STATE_BYTE_LENGTH;
 import static com.babkovic.keccak200sync.Constants.b;
 import static com.babkovic.keccak200sync.Constants.r;
+
+import com.babkovic.api.SpongeHash;
+import com.babkovic.api.SpongePermutation;
+import java.util.Arrays;
 
 public class SpongeHashKeccak200Impl implements SpongeHash {
 

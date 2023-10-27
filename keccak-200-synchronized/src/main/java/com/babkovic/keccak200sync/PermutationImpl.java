@@ -2,58 +2,69 @@ package com.babkovic.keccak200sync;
 
 import static com.babkovic.common.Utils.MOD_5;
 import static com.babkovic.common.Utils.rol8;
+import static com.babkovic.keccak200sync.Constants.KECCAK_200_PI_LANE;
+import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROTATION_CONSTANTS;
+import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROUND_CONSTANTS;
+import static com.babkovic.keccak200sync.Constants.ROUNDS;
 
 import com.babkovic.api.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation {
-    @Override
-    public byte[] permute(byte[] state) {
-
-        theta(state);
-        rho(state);
-        pi(state);
-        chi(state);
-        iota(state);
-
-        return state;
+  @Override
+  public byte[] permute(final byte[] state) {
+    for (int i = 0; i < ROUNDS; i++) {
+      theta(state);
+      rhoPi(state);
+      chi(state);
+      iota(state, i);
     }
 
-    @Override
-    public byte[] theta(byte[] state) {
-        final byte[] c = new byte[5];
+    return state;
+  }
 
-        for(int i = 0; i < 5; i++) {
-            c[i] = (byte) (state[i] ^ state[5 + i] ^ state[10 + i] ^ state[15 + i] ^ state[20 + i]);
-        }
+  @Override
+  public void theta(final byte[] state) {
+    final byte[] c = new byte[5];
 
-        for(int i = 0; i < 5; i++) {
-            final byte temp = (byte) (c[MOD_5[i+4]] ^ rol8(c[MOD_5[i+1]], 1));
-            for(int j = 0; j < 25; j += 5) {
-                state[i + j] ^= temp;
-            }
-        }
-        return state;
+    for (int i = 0; i < 5; i++) {
+      c[i] = (byte) (state[i] ^ state[5 + i] ^ state[10 + i] ^ state[15 + i] ^ state[20 + i]);
     }
 
-    @Override
-    public byte[] rho(byte[] state) {
-        byte temp = state[1];
-
-        return state;
+    for (int i = 0; i < 5; i++) {
+      final byte temp = (byte) (c[MOD_5[i + 4]] ^ rol8(c[MOD_5[i + 1]], 1));
+      for (int j = 0; j < 25; j += 5) {
+        state[i + j] ^= temp;
+      }
     }
+  }
 
-    @Override
-    public byte[] pi(byte[] state) {
-        return state;
-    }
+  @Override
+  public void rhoPi(final byte[] state) {
+    byte temp = state[1];
+    final byte[] c = new byte[1];
 
-    @Override
-    public byte[] chi(byte[] state) {
-        return state;
+    for (int i = 0; i < 24; i++) {
+      c[0] = state[KECCAK_200_PI_LANE[i]];
+      state[KECCAK_200_PI_LANE[i]] = rol8(temp, KECCAK_200_ROTATION_CONSTANTS[i]);
+      temp = c[0];
     }
+  }
 
-    @Override
-    public byte[] iota(byte[] state) {
-        return state;
+  @Override
+  public void chi(final byte[] state) {
+    final byte[] c = new byte[5];
+
+    for (int i = 0; i < 25; i += 5) {
+      System.arraycopy(state, i, c, 0, 5);
+
+      for (int j = 0; j < 5; j++) {
+        state[i + j] = (byte) (c[j] ^ ((~c[MOD_5[j + 1]]) & c[MOD_5[j + 2]]));
+      }
     }
+  }
+
+  @Override
+  public void iota(final byte[] state, final int round) {
+    state[0] ^= KECCAK_200_ROUND_CONSTANTS[round];
+  }
 }
