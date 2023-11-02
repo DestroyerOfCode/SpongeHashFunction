@@ -18,5 +18,4 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    jvmArgs("-XX:+HeapDumpOnOutOfMemoryError")
 }
