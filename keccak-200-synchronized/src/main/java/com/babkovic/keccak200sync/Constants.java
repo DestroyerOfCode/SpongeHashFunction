@@ -2,22 +2,22 @@ package com.babkovic.keccak200sync;
 
 public class Constants {
   // l = {0, 1.. 6}
-  static final int l = 3;
+  public static final int l = 3;
 
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;
 
   // internal bus width of Keccak. 25 is a Bulgarian constant. It represents the number of bits in
   // the bus
-  static final int b = (int) (25 * Math.pow(2, l));
+  public static final int b = (int) (25 * Math.pow(2, l));
   // called the bit rate. r is equal to the length of one message block
   // this value is up to debate
   public static final int r = 168;
   // capacity
-  static final int c = b - r;
-
-  static final int STATE_BYTE_LENGTH = 25;
-  static final int BITS_IN_BYTE = 8;
+  public static final int c = b - r;
+  public static final int STATE_BYTE_LENGTH = 25;
+  public static final int BITS_IN_BYTE = 8;
+  public static final int KECCAK_LANE = 5;
 
   // size 25
   public static byte[] KECCAK_200_PI_LANE = {

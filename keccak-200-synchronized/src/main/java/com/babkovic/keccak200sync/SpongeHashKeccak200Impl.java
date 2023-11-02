@@ -7,6 +7,9 @@ import static com.babkovic.keccak200sync.Constants.r;
 
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
+import com.babkovic.exception.SpongeException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 public class SpongeHashKeccak200Impl implements SpongeHash {
@@ -22,20 +25,40 @@ public class SpongeHashKeccak200Impl implements SpongeHash {
     /* b is size in bits, 8 is size of byte on every architecture.
     So if b=200, it allocates 25 bytes */
     final byte[] state = new byte[b / BITS_IN_BYTE];
+    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
 
     message = applyPadding(message);
     initState(state);
 
     for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
       // message block is the 168 bits (21 bytes)
-      final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
-
       // from the original message copy 168 bits to the message block
-      System.arraycopy(message, i, messageBlock, 0, messageBlock.length);
+      System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
       absorb(state, messageBlock);
     }
 
     return squeeze(state);
+  }
+
+  @Override
+  public byte[] hash(final InputStream message, final int messageSize) {
+    /* b is size in bits, 8 is size of byte on every architecture.
+    So if b=200, it allocates 25 bytes */
+    final byte[] state = new byte[b / BITS_IN_BYTE];
+    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
+    initState(state);
+
+    try {
+      // message block is the 168 bits (21 bytes)
+      // from the original message copy 168 bits to the message block
+      for (int i = 0; messageSize > i; i += r / BITS_IN_BYTE) {
+        message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
+        absorb(state, messageBlock);
+      }
+      return state;
+    } catch (IOException e) {
+      throw new SpongeException("An error has occurred when hashing:", e);
+    }
   }
 
   @Override
@@ -48,9 +71,11 @@ public class SpongeHashKeccak200Impl implements SpongeHash {
 
     int messageLengthOffsetInBytes = (message.length) % (r / BITS_IN_BYTE);
     if (messageLengthOffsetInBytes != 0) {
-      // we need to add as many bytes as we need for the closes multiple of 168 bits (21 bytes resp.)
+      // we need to add as many bytes as we need for the closes multiple of 168 bits (21 bytes
+      // resp.)
       // we get that by message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)
-      final byte[] paddedMessage = new byte[message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)];
+      final byte[] paddedMessage =
+          new byte[message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)];
       System.arraycopy(message, 0, paddedMessage, 0, message.length);
       return paddedMessage;
     }
