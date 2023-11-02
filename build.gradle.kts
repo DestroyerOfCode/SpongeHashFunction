@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":keccak-200-synchronized"))
+    implementation(project(":sponge-api"))
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }

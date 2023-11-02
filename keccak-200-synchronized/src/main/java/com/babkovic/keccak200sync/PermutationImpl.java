@@ -5,11 +5,15 @@ import static com.babkovic.common.Utils.rol8;
 import static com.babkovic.keccak200sync.Constants.KECCAK_200_PI_LANE;
 import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROTATION_CONSTANTS;
 import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROUND_CONSTANTS;
+import static com.babkovic.keccak200sync.Constants.KECCAK_LANE;
 import static com.babkovic.keccak200sync.Constants.ROUNDS;
 
 import com.babkovic.api.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation {
+
+  byte[] c = new byte[5];
+
   @Override
   public byte[] permute(final byte[] state) {
     for (int i = 0; i < ROUNDS; i++) {
@@ -24,13 +28,13 @@ public class PermutationImpl implements SpongePermutation {
 
   @Override
   public void theta(final byte[] state) {
-    final byte[] c = new byte[5];
+    c = new byte[KECCAK_LANE];
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < KECCAK_LANE; i++) {
       c[i] = (byte) (state[i] ^ state[5 + i] ^ state[10 + i] ^ state[15 + i] ^ state[20 + i]);
     }
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < KECCAK_LANE; i++) {
       final byte temp = (byte) (c[MOD_5[i + 4]] ^ rol8(c[MOD_5[i + 1]], 1));
       for (int j = 0; j < 25; j += 5) {
         state[i + j] ^= temp;
@@ -41,23 +45,23 @@ public class PermutationImpl implements SpongePermutation {
   @Override
   public void rhoPi(final byte[] state) {
     byte temp = state[1];
-    final byte[] c = new byte[1];
+    byte c;
 
     for (int i = 0; i < 24; i++) {
-      c[0] = state[KECCAK_200_PI_LANE[i]];
+      c = state[KECCAK_200_PI_LANE[i]];
       state[KECCAK_200_PI_LANE[i]] = rol8(temp, KECCAK_200_ROTATION_CONSTANTS[i]);
-      temp = c[0];
+      temp = c;
     }
   }
 
   @Override
   public void chi(final byte[] state) {
-    final byte[] c = new byte[5];
+    c = new byte[KECCAK_LANE];
 
     for (int i = 0; i < 25; i += 5) {
-      System.arraycopy(state, i, c, 0, 5);
+      System.arraycopy(state, i, c, 0, KECCAK_LANE);
 
-      for (int j = 0; j < 5; j++) {
+      for (int j = 0; j < KECCAK_LANE; j++) {
         state[i + j] = (byte) (c[j] ^ ((~c[MOD_5[j + 1]]) & c[MOD_5[j + 2]]));
       }
     }
