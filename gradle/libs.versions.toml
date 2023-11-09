@@ -1,12 +1,14 @@
 [versions]
 #testing
-org-junit-jupiter = "5.10.0"
-org-mockito = "5.0.0"
+org-junit5 = "5.10.1"
+org-mockito = "5.7.0"
 
 [libraries]
 #testing
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "org-junit-jupiter" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "org-junit5" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter"}
 mockito = { group = "org.mockito", name = "mockito-core", version.ref = "org-mockito" }
 
 [bundles]
-web-test = ["junit-jupiter", "mockito",]
+web-test = ["junit-jupiter", "mockito"]
+

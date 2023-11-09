@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.babkovic"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -12,10 +12,12 @@ repositories {
 dependencies {
     implementation(project(":keccak-200-synchronized"))
     implementation(project(":sponge-api"))
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("performanceHeavy")
+    }
 }
