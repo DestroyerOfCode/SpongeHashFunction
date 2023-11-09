@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.babkovic"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -11,9 +11,8 @@ repositories {
 
 dependencies {
     implementation(project(":sponge-api"))
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.mockito:mockito-core:5.6.0")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.bundles.web.test)
 }
 
 tasks.test {

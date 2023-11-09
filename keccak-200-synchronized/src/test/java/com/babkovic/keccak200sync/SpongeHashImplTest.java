@@ -1,6 +1,8 @@
 package com.babkovic.keccak200sync;
 
+import static com.babkovic.keccak200sync.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak200sync.Constants.ROUNDS;
+import static com.babkovic.keccak200sync.Constants.r;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,6 +14,8 @@ import static org.mockito.Mockito.verify;
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -161,6 +165,25 @@ class SpongeHashImplTest {
     assertDoesNotThrow(() -> spongeHashKeccak200.hash(is, message.length));
     verify(spongeHashKeccak200, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
+  }
+
+  @Tag("streamVersion")
+  @Tag("performanceHeavy")
+  @Test
+  void shouldNotThrowException_WhenCallingHashWithStreamImageMessage(final TestInfo testInfo)
+      throws IOException {
+    // given
+    try (final InputStream is =
+        new FileInputStream("src/test/resources/video.mp4")) {
+      final int fileSize = is.available();
+      final int n =
+          1 + fileSize / (r / BITS_IN_BYTE); // how many times will absorb phase iterate through message
+
+      // when & then
+      assertDoesNotThrow(() -> spongeHashKeccak200.hash(is, fileSize));
+      verify(spongeHashKeccak200, times(n)).absorb(any(), any());
+      verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    }
   }
 
   @Test
