@@ -3,6 +3,7 @@ package com.babkovic.keccak200sync;
 import static com.babkovic.keccak200sync.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak200sync.Constants.ROUNDS;
 import static com.babkovic.keccak200sync.Constants.r;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

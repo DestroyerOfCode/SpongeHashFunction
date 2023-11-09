@@ -22,6 +22,7 @@ public class Main {
       System.out.println("Hash string: " + HexFormat.of().formatHex(hash));
       System.out.println("Hash bytes: " + Arrays.toString(hash));
       System.out.println("Hash size: " + hash.length + " bytes");
+
     } catch (IOException e) {
       throw new SpongeException("Something went wrong hashing", e);
     }

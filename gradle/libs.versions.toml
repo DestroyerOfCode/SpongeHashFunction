@@ -11,3 +11,4 @@ mockito = { group = "org.mockito", name = "mockito-core", version.ref = "org-moc
 
 [bundles]
 web-test = ["junit-jupiter", "mockito"]
+
