@@ -7,7 +7,6 @@ public interface Permutation {
    * state
    *
    * @param state the mixed message block m with the state
-   * @return permutated stated
    */
-  byte[] permute(final byte[] state);
+  void permute(final byte[] state);
 }

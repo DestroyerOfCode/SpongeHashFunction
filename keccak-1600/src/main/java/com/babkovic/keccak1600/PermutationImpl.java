@@ -1,18 +1,16 @@
-package com.babkovic.keccak200sync;
+package com.babkovic.keccak1600;
 
 import static com.babkovic.common.Utils.MOD_5;
 import static com.babkovic.common.Utils.rol8;
-import static com.babkovic.keccak200sync.Constants.KECCAK_200_PI_LANE;
-import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROTATION_CONSTANTS;
-import static com.babkovic.keccak200sync.Constants.KECCAK_200_ROUND_CONSTANTS;
-import static com.babkovic.keccak200sync.Constants.KECCAK_LANE;
-import static com.babkovic.keccak200sync.Constants.ROUNDS;
+import static com.babkovic.keccak1600.Constants.KECCAK_1600_PI_LANE;
+import static com.babkovic.keccak1600.Constants.KECCAK_1600_ROTATION_CONSTANTS;
+import static com.babkovic.keccak1600.Constants.KECCAK_1600_ROUND_CONSTANTS;
+import static com.babkovic.keccak1600.Constants.KECCAK_LANE;
+import static com.babkovic.keccak1600.Constants.ROUNDS;
 
 import com.babkovic.api.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation {
-
-  byte[] c = new byte[5];
 
   @Override
   public void permute(final byte[] state) {
@@ -27,7 +25,7 @@ public class PermutationImpl implements SpongePermutation {
 
   @Override
   public void theta(final byte[] state) {
-    c = new byte[KECCAK_LANE];
+    final byte[] c = new byte[KECCAK_LANE];
 
     for (int i = 0; i < KECCAK_LANE; i++) {
       c[i] = (byte) (state[i] ^ state[5 + i] ^ state[10 + i] ^ state[15 + i] ^ state[20 + i]);
@@ -47,15 +45,15 @@ public class PermutationImpl implements SpongePermutation {
     byte c;
 
     for (int i = 0; i < 24; i++) {
-      c = state[KECCAK_200_PI_LANE[i]];
-      state[KECCAK_200_PI_LANE[i]] = rol8(temp, KECCAK_200_ROTATION_CONSTANTS[i]);
+      c = state[KECCAK_1600_PI_LANE[i]];
+      state[KECCAK_1600_PI_LANE[i]] = rol8(temp, KECCAK_1600_ROTATION_CONSTANTS[i]);
       temp = c;
     }
   }
 
   @Override
   public void chi(final byte[] state) {
-    c = new byte[KECCAK_LANE];
+    final byte[] c = new byte[KECCAK_LANE];
 
     for (int i = 0; i < 25; i += 5) {
       System.arraycopy(state, i, c, 0, KECCAK_LANE);
@@ -68,6 +66,6 @@ public class PermutationImpl implements SpongePermutation {
 
   @Override
   public void iota(final byte[] state, final int round) {
-    state[0] ^= KECCAK_200_ROUND_CONSTANTS[round];
+    state[0] ^= KECCAK_1600_ROUND_CONSTANTS[round];
   }
 }

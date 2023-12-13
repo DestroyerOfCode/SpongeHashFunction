@@ -10,9 +10,9 @@ public interface SpongeHash extends Hash {
    */
   byte[] applyPadding(final byte[] message);
 
-  byte[] initState(final byte[] message);
+  void initState(final byte[] message);
 
-  byte[] absorb(final byte[] state, final byte[] message);
+  void absorb(final byte[] state, final byte[] message);
 
   byte[] squeeze(final byte[] message);
 }
