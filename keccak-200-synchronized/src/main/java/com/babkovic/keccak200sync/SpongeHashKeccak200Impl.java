@@ -55,7 +55,7 @@ public class SpongeHashKeccak200Impl implements SpongeHash {
         message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
         absorb(state, messageBlock);
       }
-      return state;
+      return squeeze(state);
     } catch (IOException e) {
       throw new SpongeException("An error has occurred when hashing:", e);
     }

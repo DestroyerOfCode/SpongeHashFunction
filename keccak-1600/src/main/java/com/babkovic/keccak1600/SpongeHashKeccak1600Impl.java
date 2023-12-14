@@ -1,6 +1,7 @@
 package com.babkovic.keccak1600;
 
 import static com.babkovic.keccak1600.Constants.BITS_IN_BYTE;
+import static com.babkovic.keccak1600.Constants.OUTPUT_LENGTH_BITS;
 import static com.babkovic.keccak1600.Constants.STATE_BYTE_LENGTH;
 import static com.babkovic.keccak1600.Constants.b;
 import static com.babkovic.keccak1600.Constants.r;
@@ -30,14 +31,18 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
     message = applyPadding(message);
     initState(state);
 
-    for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
-      // message block is the 1152 bits (21 bytes)
-      // from the original message copy 1152 bits to the message block
-      System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
-      absorb(state, messageBlock);
-    }
+    try {
+      for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
+        // message block is the 1152 bits (21 bytes)
+        // from the original message copy 1152 bits to the message block
+        System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
+        absorb(state, messageBlock);
+      }
 
-    return squeeze(state);
+      return squeeze(state);
+    } catch (Exception e) {
+      throw new SpongeException("An error has occurred when hashing:", e);
+    }
   }
 
   @Override
@@ -55,7 +60,9 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
         message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
         absorb(state, messageBlock);
       }
-      return state;
+
+      // returns first
+      return squeeze(state);
     } catch (IOException e) {
       throw new SpongeException("An error has occurred when hashing:", e);
     }
@@ -101,7 +108,7 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
 
   @Override
   public byte[] squeeze(final byte[] message) {
-    final byte[] retArr = new byte[r / BITS_IN_BYTE];
+    final byte[] retArr = new byte[OUTPUT_LENGTH_BITS / BITS_IN_BYTE];
     // use the first r bits to squeeze out the output
     System.arraycopy(message, 0, retArr, 0, retArr.length);
 

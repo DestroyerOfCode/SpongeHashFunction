@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.function.Executable;
 
 class SpongeHashImplTest {
 
@@ -47,7 +48,7 @@ class SpongeHashImplTest {
   void shouldNotThrowException_WhenCallingHashWithSmallMessage(final TestInfo testInfo) {
     // given
     final int n = 1; // how many times will absorb phase iterate through message
-    //143 elements, just 1 before the max. 144 = r/bits_in_byte
+    // 143 elements, just 1 before the max. 144 = r/bits_in_byte
     byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
@@ -60,7 +61,7 @@ class SpongeHashImplTest {
     };
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(message));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -83,7 +84,7 @@ class SpongeHashImplTest {
     };
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(message));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(1);
   }
@@ -94,7 +95,7 @@ class SpongeHashImplTest {
       final TestInfo testInfo) {
     // given
     final int n = 2; // how many times will absorb phase iterate through message
-    //145
+    // 145
     byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
@@ -107,7 +108,7 @@ class SpongeHashImplTest {
     };
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(message));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -128,7 +129,7 @@ class SpongeHashImplTest {
     byte[] message = new byte[arraySize];
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(message));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -138,11 +139,11 @@ class SpongeHashImplTest {
   void shouldNotThrowException_WhenCallingHashWithStreamSmallMessage(final TestInfo testInfo) {
     // given
     final int n = 1; // how many times will absorb phase iterate through message
-    byte[] message = {33, -127, 10, 33, -127, 10, 33, -127};
+    final byte[] message = {33, -127, 10, 33, -127, 10, 33, -127};
     final InputStream is = new ByteArrayInputStream(message);
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(is, message.length));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -160,9 +161,13 @@ class SpongeHashImplTest {
     final InputStream is = new ByteArrayInputStream(message);
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(is, message.length));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
+  }
+
+  private Executable hashAndAssertSize(final byte[] spongeHashKeccak1600) {
+    return () -> assertEquals(28, spongeHashKeccak1600.length);
   }
 
   @Tag("streamVersion")
@@ -184,7 +189,7 @@ class SpongeHashImplTest {
     final InputStream is = new ByteArrayInputStream(message);
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(is, message.length));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -193,7 +198,7 @@ class SpongeHashImplTest {
   @Test
   void shouldNotThrowException_WhenCallingHashWithStreamLongMessage(final TestInfo testInfo) {
     // given
-    final int arraySize = 1_048_12;
+    final int arraySize = 104_812;
     final int n =
         (int)
             Math.ceil(
@@ -205,7 +210,7 @@ class SpongeHashImplTest {
     final InputStream is = new ByteArrayInputStream(message);
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak1600.hash(is, message.length));
+    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
   }
@@ -224,10 +229,10 @@ class SpongeHashImplTest {
                   (double) fileSize
                       / ((double) r
                           / BITS_IN_BYTE)); // how many times will absorb phase iterate through
-                                            // message
+      // message
 
       // when & then
-      assertDoesNotThrow(() -> spongeHashKeccak1600.hash(is, fileSize));
+      assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, fileSize)));
       verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
       verifyPermFuncsGetCalledNTimesRoundTimes(n);
     }

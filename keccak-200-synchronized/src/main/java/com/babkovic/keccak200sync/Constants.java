@@ -4,6 +4,9 @@ public class Constants {
   // l = {0, 1.. 6}
   public static final int l = 3;
 
+  // this is also the size of a message block in the squeezing phase
+  public static final int OUTPUT_LENGTH_BITS = 224;
+
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;
 
@@ -11,7 +14,7 @@ public class Constants {
   // the bus
   public static final int b = (int) (25 * Math.pow(2, l));
   // called the bit rate. r is equal to the length of one message block
-  // this value is up to debate
+  // this value is up to debate. It is also the output size.
   public static final int r = 168;
   // capacity
   public static final int c = b - r;

@@ -20,7 +20,6 @@ public class PermutationImpl implements SpongePermutation {
       chi(state);
       iota(state, i);
     }
-
   }
 
   @Override

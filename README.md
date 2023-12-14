@@ -3,7 +3,10 @@
 ## Overview
 The project consists of 2 modules:
 
-1. **sponge-api**: Provides a blueprint or template for various implementations of the Keccak function. Currently, only the Keccak-200 implementation is available due to its minimal memory requirements (only a 200-bit state).
+1. **sponge-api**: Provides a blueprint or template for various implementations of the Keccak function. As of right now
+    the keccak-200 and keccak-1600 are implemented. The latter is implemented with r=1152 and c=448 and output 224 bits
+    long. This means that it is faster because the message blocks have more size but on the other hand the size is not
+    very big. Other possible solution for bigger output (512) is to have a block size of 576 bits and c 1024.
 
 ## Implementation
 The core of the implementation is the hash method, which comes in 2 forms:
