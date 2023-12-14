@@ -12,13 +12,13 @@ public class Constants {
   public static final int KECCAK_LANE = 5;
 
   // internal bus width of Keccak. 25 is a Bulgarian constant. It represents the number of bits in
-  // the bus
-  public static final int b = (int) ((KECCAK_LANE * KECCAK_LANE) * Math.pow(2, l)); // 1600
-  public static final int r = 1152; // in bits
+  // the bus (1600 bits)
+  public static final int b = (int) ((KECCAK_LANE * KECCAK_LANE) * Math.pow(2, l)); // 1600 bits
+  public static final int r = 1152; // in bits. it is b - c
   // capacity
   public static final int c = b - r; // 448 bits
   public static final int BITS_IN_BYTE = 8;
-  public static final int STATE_BYTE_LENGTH = b / BITS_IN_BYTE; // 200
+  public static final int STATE_BYTE_LENGTH = b / BITS_IN_BYTE; // 200 bytes
 
   // size 25
   public static byte[] KECCAK_1600_PI_LANE = {

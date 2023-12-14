@@ -15,4 +15,6 @@ public interface SpongeHash extends Hash {
   void absorb(final byte[] state, final byte[] message);
 
   byte[] squeeze(final byte[] message);
+
+  byte[] squeeze(final byte[] message, final int outputOffsetPosition);
 }

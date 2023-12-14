@@ -108,9 +108,14 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
 
   @Override
   public byte[] squeeze(final byte[] message) {
+    return squeeze(message, 0);
+  }
+
+  @Override
+  public byte[] squeeze(final byte[] message, final int outputOffsetPosition) {
     final byte[] retArr = new byte[OUTPUT_LENGTH_BITS / BITS_IN_BYTE];
     // use the first r bits to squeeze out the output
-    System.arraycopy(message, 0, retArr, 0, retArr.length);
+    System.arraycopy(message, 0, retArr, outputOffsetPosition, retArr.length);
 
     return retArr;
   }

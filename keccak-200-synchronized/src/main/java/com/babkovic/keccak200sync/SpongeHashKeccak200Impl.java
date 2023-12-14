@@ -90,21 +90,24 @@ public class SpongeHashKeccak200Impl implements SpongeHash {
 
     // in later stages apply different initial values for improved security. this is just pro forma
     Arrays.fill(state, (byte) 0b01010101);
-
   }
 
   @Override
   public void absorb(final byte[] state, final byte[] message) {
     mixStateAndMessage(state, message);
     spongePermutation.permute(state);
-
   }
 
   @Override
   public byte[] squeeze(final byte[] message) {
+    return squeeze(message, 0);
+  }
+
+  @Override
+  public byte[] squeeze(final byte[] message, final int outputOffsetPosition) {
     final byte[] retArr = new byte[r / BITS_IN_BYTE];
     // use the first r bits to squeeze out the output
-    System.arraycopy(message, 0, retArr, 0, retArr.length);
+    System.arraycopy(message, 0, retArr, outputOffsetPosition, retArr.length);
 
     return retArr;
   }
