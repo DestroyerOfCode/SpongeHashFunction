@@ -1,10 +1,10 @@
-package com.babkovic.keccak1600;
+package com.babkovic.keccak1600output256;
 
-import static com.babkovic.keccak1600.Constants.BITS_IN_BYTE;
-import static com.babkovic.keccak1600.Constants.OUTPUT_LENGTH_BITS;
-import static com.babkovic.keccak1600.Constants.STATE_BYTE_LENGTH;
-import static com.babkovic.keccak1600.Constants.b;
-import static com.babkovic.keccak1600.Constants.r;
+import static com.babkovic.keccak1600output256.Constants.BITS_IN_BYTE;
+import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
+import static com.babkovic.keccak1600output256.Constants.STATE_BYTE_LENGTH;
+import static com.babkovic.keccak1600output256.Constants.b;
+import static com.babkovic.keccak1600output256.Constants.r;
 
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
@@ -33,7 +33,7 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
 
     try {
       for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
-        // message block is the 1152 bits (144 bytes)
+        // message block is the 1152 bits (21 bytes)
         // from the original message copy 1152 bits to the message block
         System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
         absorb(state, messageBlock);
@@ -78,7 +78,7 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
 
     int messageLengthOffsetInBytes = (message.length) % (r / BITS_IN_BYTE);
     if (messageLengthOffsetInBytes != 0) {
-      // we need to add as many bytes as we need for the closes multiple of 1152 bits (21 bytes
+      // we need to add as many bytes as we need for the closes multiple of 1088 bits (136 bytes
       // resp.)
       // we get that by message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)
       final byte[] paddedMessage =

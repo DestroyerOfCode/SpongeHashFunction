@@ -1,6 +1,7 @@
 package com.babkovic.keccak1600;
 
 import static com.babkovic.keccak1600.Constants.BITS_IN_BYTE;
+import static com.babkovic.keccak1600.Constants.OUTPUT_LENGTH_BITS;
 import static com.babkovic.keccak1600.Constants.ROUNDS;
 import static com.babkovic.keccak1600.Constants.STATE_BYTE_LENGTH;
 import static com.babkovic.keccak1600.Constants.r;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.function.Executable;
 
-class SpongeHashImplTest {
+class SpongeHash1600Output224ImplTest {
 
   private SpongePermutation spongePermutationImpl;
   private SpongeHash spongeHashKeccak1600;
@@ -156,7 +157,13 @@ class SpongeHashImplTest {
     final int n = 1; // how many times will absorb phase iterate through message
     byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
-      127
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
+      127, 3, 1, 1
     };
     final InputStream is = new ByteArrayInputStream(message);
 
@@ -164,10 +171,6 @@ class SpongeHashImplTest {
     assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
     verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(n);
-  }
-
-  private Executable hashAndAssertSize(final byte[] spongeHashKeccak1600) {
-    return () -> assertEquals(28, spongeHashKeccak1600.length);
   }
 
   @Tag("streamVersion")
@@ -321,5 +324,9 @@ class SpongeHashImplTest {
     verify(spongePermutationImpl, times(n * ROUNDS)).rhoPi(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).chi(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).iota(any(), anyInt());
+  }
+
+  private Executable hashAndAssertSize(final byte[] spongeHashKeccak1600) {
+    return () -> assertEquals(OUTPUT_LENGTH_BITS / BITS_IN_BYTE, spongeHashKeccak1600.length);
   }
 }

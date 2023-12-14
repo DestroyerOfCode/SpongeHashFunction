@@ -4,9 +4,6 @@ public class Constants {
   // l = {0, 1.. 6}
   public static final int l = 3;
 
-  // this is also the size of a message block in the squeezing phase
-  public static final int OUTPUT_LENGTH_BITS = 224;
-
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;
 
