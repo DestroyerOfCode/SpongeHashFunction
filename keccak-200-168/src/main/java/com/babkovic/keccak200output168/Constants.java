@@ -1,4 +1,4 @@
-package com.babkovic.keccak200sync;
+package com.babkovic.keccak200output168;
 
 public class Constants {
   // l = {0, 1.. 6}

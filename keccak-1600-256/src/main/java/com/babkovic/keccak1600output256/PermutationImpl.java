@@ -1,6 +1,7 @@
 package com.babkovic.keccak1600output256;
 
 import static com.babkovic.common.Utils.MOD_5;
+import static com.babkovic.common.Utils.rol64;
 import static com.babkovic.keccak1600output256.Constants.KECCAK_1600_PI_LANE;
 import static com.babkovic.keccak1600output256.Constants.KECCAK_1600_ROTATION_CONSTANTS;
 import static com.babkovic.keccak1600output256.Constants.KECCAK_1600_ROUND_CONSTANTS;
@@ -35,10 +36,6 @@ public class PermutationImpl implements SpongePermutation<long[]> {
         state[i + j] ^= temp;
       }
     }
-  }
-
-  private static long rol64(long a, int offset) {
-    return (offset != 0) ? ((a << offset) ^ (a >>> (64 - offset))) : a;
   }
 
   @Override
