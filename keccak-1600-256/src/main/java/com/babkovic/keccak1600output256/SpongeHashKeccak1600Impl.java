@@ -1,63 +1,85 @@
 package com.babkovic.keccak1600output256;
 
 import static com.babkovic.keccak1600output256.Constants.BITS_IN_BYTE;
+import static com.babkovic.keccak1600output256.Constants.BITS_IN_LONG;
 import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
-import static com.babkovic.keccak1600output256.Constants.STATE_BYTE_LENGTH;
+import static com.babkovic.keccak1600output256.Constants.STATE_LONG_LENGTH;
 import static com.babkovic.keccak1600output256.Constants.b;
 import static com.babkovic.keccak1600output256.Constants.r;
 
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
 import com.babkovic.exception.SpongeException;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class SpongeHashKeccak1600Impl implements SpongeHash {
+public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
 
-  private final SpongePermutation spongePermutation;
+  private final SpongePermutation<long[]> spongePermutation;
 
-  public SpongeHashKeccak1600Impl(final SpongePermutation spongePermutation) {
+  public SpongeHashKeccak1600Impl(final SpongePermutation<long[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 
   @Override
-  public byte[] hash(byte[] message) {
-    /* b is size in bits, 8 is size of byte on every architecture.
-    So if b=200, it allocates 25 bytes */
-    final byte[] state = new byte[b / BITS_IN_BYTE];
-    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
+  public long[] hash(long[] message) {
+    /* b is size in bits, 64 is size of Long on every architecture.
+    So if b=1600, it allocates 25 Longs
+    and if r=1088, it allocated 18 Longs
+    */
+    final long[] state = new long[b / BITS_IN_LONG];
+    final long[] messageBlock = new long[r / BITS_IN_LONG];
 
     message = applyPadding(message);
     initState(state);
 
     try {
-      for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
-        // message block is the 1152 bits (21 bytes)
-        // from the original message copy 1152 bits to the message block
-        System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
+      for (int i = 0; i < message.length; i += r / BITS_IN_LONG) {
+        // message block is the 1088 bits (17 Longs)
+        // from the original message copy 1088 bits to the message block
+        System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_LONG);
         absorb(state, messageBlock);
       }
 
       return squeeze(state);
     } catch (Exception e) {
-      throw new SpongeException("An error has occurred when hashing:", e);
+      throw new SpongeException("An error has occurred when hashing: ", e);
     }
   }
 
   @Override
-  public byte[] hash(final InputStream message, final int messageSize) {
-    /* b is size in bits, 8 is size of byte on every architecture.
-    So if b=1600, it allocates 200 bytes */
-    final byte[] state = new byte[b / BITS_IN_BYTE];
-    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
-    initState(state);
+  public long[] hash(final InputStream messageStream, final int messageSizeBytes) {
+    /* b is size in bits, 64 is size of Long on every architecture.
+    So if b=1600, it allocates 25 Longs
+    and if r=1088, it allocated 18 Longs
+    */
 
+    final long[] state = new long[b / BITS_IN_LONG]; // 25
+    long[] messageBlock = new long[r / BITS_IN_LONG]; // 17
+    final DataInputStream message = new DataInputStream(messageStream);
+
+    initState(state);
     try {
-      // message block is the 1152 bits (21 bytes)
-      // from the original message copy 1152 bits to the message block
-      for (int i = 0; messageSize > i; i += r / BITS_IN_BYTE) {
-        message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
+      // message block is the 1088 bits (17 bytes)
+      // from the original message copy 1088 bits to the message block
+      for (int i = 0; messageSizeBytes > i; i += r / BITS_IN_BYTE) {
+
+        final int bytesToRead = Math.min(r / BITS_IN_BYTE, messageSizeBytes);
+        byte[] bytesRead = new byte[bytesToRead];
+        int read = message.read(bytesRead);
+
+        if (read < r / BITS_IN_BYTE) {
+          bytesRead = applyPadding(bytesRead);
+        }
+
+        final ByteBuffer buffer = ByteBuffer.wrap(bytesRead);
+        for (int j = 0; j < r / BITS_IN_LONG; j++) {
+          messageBlock[j] = buffer.getLong();
+        }
+
         absorb(state, messageBlock);
       }
 
@@ -69,51 +91,72 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
   }
 
   @Override
+  public long[] applyPadding(final long[] message) {
+    int originalLength = message.length;
+    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_LONG); // 17
+
+    final long[] paddedMessage = new long[paddedLength];
+    System.arraycopy(message, 0, paddedMessage, 0, originalLength);
+
+    return paddedMessage;
+  }
+
   public byte[] applyPadding(final byte[] message) {
-    if (message.length < r / BITS_IN_BYTE) {
-      final byte[] paddedMessage = new byte[r / BITS_IN_BYTE];
-      System.arraycopy(message, 0, paddedMessage, 0, message.length);
-      return paddedMessage;
+    int originalLength = message.length;
+    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_BYTE); // 136
+
+    final byte[] paddedMessage = new byte[paddedLength];
+    System.arraycopy(message, 0, paddedMessage, 0, originalLength);
+
+    return paddedMessage;
+  }
+
+  /**
+   * Calculates the nearest multiple of a number that is greater than the array size.
+   *
+   * @param arraySize The size of the array.
+   * @param number The number for which the nearest multiple is to be found.
+   * @return The nearest multiple of the number that is greater than the array size.
+   */
+  private static int nearestGreaterMultiple(int arraySize, int number) {
+    if (number <= 0) {
+      throw new IllegalArgumentException("Number must be greater than 0.");
     }
 
-    int messageLengthOffsetInBytes = (message.length) % (r / BITS_IN_BYTE);
-    if (messageLengthOffsetInBytes != 0) {
-      // we need to add as many bytes as we need for the closes multiple of 1088 bits (136 bytes
-      // resp.)
-      // we get that by message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)
-      final byte[] paddedMessage =
-          new byte[message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)];
-      System.arraycopy(message, 0, paddedMessage, 0, message.length);
-      return paddedMessage;
+    int multiple = (arraySize / number) * number;
+    if (multiple < arraySize) {
+      multiple += number;
     }
-    return message;
+    return multiple;
   }
 
   @Override
-  public void initState(final byte[] state) {
-    if (STATE_BYTE_LENGTH != state.length) {
+  public void initState(final long[] state) {
+    if (STATE_LONG_LENGTH != state.length) {
       throw new RuntimeException(
-          String.format("Incorrect size of state. Should be %d.", STATE_BYTE_LENGTH));
+          String.format(
+              "Incorrect size of state. Should be %d Bytes (%d Longs) (%d bits).",
+              STATE_LONG_LENGTH * Long.BYTES, STATE_LONG_LENGTH, b));
     }
 
     // in later stages apply different initial values for improved security. this is just pro forma
-    Arrays.fill(state, (byte) 0b01010101);
+    Arrays.fill(state, 1431655765L);
   }
 
   @Override
-  public void absorb(final byte[] state, final byte[] message) {
+  public void absorb(final long[] state, final long[] message) {
     mixStateAndMessage(state, message);
     spongePermutation.permute(state);
   }
 
   @Override
-  public byte[] squeeze(final byte[] message) {
+  public long[] squeeze(final long[] message) {
     return squeeze(message, 0);
   }
 
   @Override
-  public byte[] squeeze(final byte[] message, final int outputOffsetPosition) {
-    final byte[] retArr = new byte[OUTPUT_LENGTH_BITS / BITS_IN_BYTE];
+  public long[] squeeze(final long[] message, final int outputOffsetPosition) {
+    final long[] retArr = new long[OUTPUT_LENGTH_BITS / BITS_IN_LONG];
     // use the first r bits to squeeze out the output
     System.arraycopy(message, 0, retArr, outputOffsetPosition, retArr.length);
 
@@ -121,12 +164,12 @@ public class SpongeHashKeccak1600Impl implements SpongeHash {
   }
 
   /**
-   * mixing the message block with the current state. this methods xors first 1152 bits of the state
-   * with first 1152 bits of the message. 1152 bits because that is the length of r of the message.
+   * mixing the message block with the current state. this methods xors first 1088 bits of the state
+   * with first 1088 bits of the message. 1088 bits because that is the length of r of the message.
    */
-  private static void mixStateAndMessage(byte[] state, byte[] message) {
+  private static void mixStateAndMessage(final long[] state, final long[] message) {
     for (int i = 0; i < message.length; i++) {
-      state[i] = (byte) (message[i] ^ state[i]);
+      state[i] = message[i] ^ state[i];
     }
   }
 }

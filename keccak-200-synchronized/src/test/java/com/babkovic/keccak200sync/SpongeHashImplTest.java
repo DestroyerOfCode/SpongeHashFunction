@@ -24,10 +24,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-class SpongeHashImplTest {
+public class SpongeHashImplTest {
 
-  private SpongePermutation spongePermutationImpl;
-  private SpongeHash spongeHashKeccak200;
+  private SpongePermutation<byte[]> spongePermutationImpl;
+  private SpongeHash<byte[]> spongeHashKeccak200;
 
   @BeforeEach
   void setUp() {
@@ -112,9 +112,14 @@ class SpongeHashImplTest {
     final InputStream is = new ByteArrayInputStream(message);
 
     // when & then
-    assertDoesNotThrow(() -> spongeHashKeccak200.hash(is, message.length));
-    verify(spongeHashKeccak200, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    final byte[] resStream = spongeHashKeccak200.hash(is, message.length);
+    final byte[] resArray = spongeHashKeccak200.hash(message);
+
+    for (int i = 0; i < resStream.length; i++) {
+      assertEquals(resArray[i], resStream[i]);
+    }
+    verify(spongeHashKeccak200, times(n * 2)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(n * 2);
   }
 
   @Tag("streamVersion")

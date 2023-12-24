@@ -2,7 +2,7 @@ package com.babkovic.api;
 
 import java.io.InputStream;
 
-public interface Hash {
+public interface Hash<T> {
   /**
    * this method returns the hashed message
    *
@@ -10,7 +10,7 @@ public interface Hash {
    * @return a hashed message of sizes either 224, 256, 384 or 512 bits which makes up for a byte
    *     array of sizes 28, 32, 48 or 64 respectively
    */
-  byte[] hash(byte[] message);
+  T hash(T message);
 
-  byte[] hash(final InputStream message, final int messageSize);
+  T hash(final InputStream message, final int messageSize);
 }

@@ -1,6 +1,6 @@
 package com.babkovic.api;
 
-public interface SpongeHash extends Hash {
+public interface SpongeHash<T> extends Hash<T> {
 
   /**
    * If the original message is shorter than n bits (200 for keccak_200 etc...), this method creates
@@ -8,13 +8,13 @@ public interface SpongeHash extends Hash {
    *
    * @return the original message with additional bits added to its end (only 0s)
    */
-  byte[] applyPadding(final byte[] message);
+  T applyPadding(final T message);
 
-  void initState(final byte[] message);
+  void initState(final T message);
 
-  void absorb(final byte[] state, final byte[] message);
+  void absorb(final T state, final T message);
 
-  byte[] squeeze(final byte[] message);
+  T squeeze(final T message);
 
-  byte[] squeeze(final byte[] message, final int outputOffsetPosition);
+  T squeeze(final T message, final int outputOffsetPosition);
 }

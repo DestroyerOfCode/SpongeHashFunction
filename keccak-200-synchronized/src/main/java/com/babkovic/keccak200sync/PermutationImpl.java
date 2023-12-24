@@ -10,7 +10,7 @@ import static com.babkovic.keccak200sync.Constants.ROUNDS;
 
 import com.babkovic.api.SpongePermutation;
 
-public class PermutationImpl implements SpongePermutation {
+public class PermutationImpl implements SpongePermutation<byte[]> {
 
   byte[] c = new byte[5];
 

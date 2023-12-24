@@ -12,11 +12,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class SpongeHashKeccak200Impl implements SpongeHash {
+public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
 
-  private final SpongePermutation spongePermutation;
+  private final SpongePermutation<byte[]> spongePermutation;
 
-  public SpongeHashKeccak200Impl(final SpongePermutation spongePermutation) {
+  public SpongeHashKeccak200Impl(final SpongePermutation<byte[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 

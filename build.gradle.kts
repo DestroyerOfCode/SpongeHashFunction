@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":keccak-200-synchronized"))
+    implementation(project(":keccak-1600-256"))
     implementation(project(":sponge-api"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

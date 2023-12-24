@@ -6,12 +6,12 @@ package com.babkovic.api;
  * in the word along the z-axis). source: <a
  * href="https://www.crypto-textbook.com/download/Understanding-Cryptography-Keccak.pdf"></a>
  */
-public interface SpongePermutation extends Permutation {
-  void theta(final byte[] state);
+public interface SpongePermutation<T> extends Permutation<T> {
+  void theta(final T state);
 
-  void rhoPi(final byte[] state);
+  void rhoPi(final T state);
 
-  void chi(final byte[] state);
+  void chi(final T state);
 
-  void iota(final byte[] state, final int round);
+  void iota(final T state, final int round);
 }
