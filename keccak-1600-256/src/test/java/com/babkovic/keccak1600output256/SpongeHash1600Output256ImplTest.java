@@ -1,15 +1,14 @@
 package com.babkovic.keccak1600output256;
 
+import static com.babkovic.common.Utils.nearestGreaterMultiple;
 import static com.babkovic.keccak1600output256.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak1600output256.Constants.BITS_IN_LONG;
 import static com.babkovic.keccak1600output256.Constants.BYTES_IN_LONG;
 import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
 import static com.babkovic.keccak1600output256.Constants.ROUNDS;
-import static com.babkovic.keccak1600output256.Constants.STATE_LONG_LENGTH;
 import static com.babkovic.keccak1600output256.Constants.r;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.spy;
@@ -51,6 +50,47 @@ class SpongeHash1600Output256ImplTest {
     spongeHashKeccak1600 = null;
   }
 
+  private static void verifyArraysAreEqual(final long[] arr1, final long[] arr2) {
+    assertEquals(arr1.length, arr2.length);
+    for (int i = 0; i < arr1.length; i++) {
+      assertEquals(arr2[i], arr1[i]);
+    }
+  }
+
+  private static int calculateNumberOfAbsorbIterations(final int fileSize) {
+    return (int) Math.ceil((double) (fileSize * BITS_IN_BYTE) / r);
+  }
+
+  private static byte[] toByteArray(final InputStream inputStream, final int available)
+      throws IOException {
+    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    int nRead;
+    final byte[] data = new byte[available]; // Buffer size
+
+    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+      buffer.write(data, 0, nRead);
+    }
+
+    buffer.flush();
+    return buffer.toByteArray();
+  }
+
+  private static long[] byteArrayToLongArray(final byte[] bytes) {
+
+    final long[] outBytes = new long[(int) Math.ceil((double) bytes.length / BYTES_IN_LONG)];
+
+    final int padding = outBytes.length * BYTES_IN_LONG - bytes.length;
+    final ByteBuffer buffer =
+        ByteBuffer.allocate(bytes.length + padding).put(bytes).put(new byte[padding]);
+    buffer.flip();
+    buffer.asLongBuffer().get(outBytes);
+    return outBytes;
+  }
+
+  private static Executable hashAndAssertSize(final long[] message) {
+    return () -> assertEquals(OUTPUT_LENGTH_BITS / BITS_IN_LONG, message.length);
+  }
+
   @Test
   void shouldReturnOriginalMessage_WhenApplyPaddingWithMultipleOfr(final TestInfo testInfo) {
     // given
@@ -61,9 +101,7 @@ class SpongeHash1600Output256ImplTest {
     final long[] retMessage = spongeHashKeccak1600.applyPadding(message);
 
     // then
-    for (int i = 0; i < retMessage.length; i++) {
-      assertEquals(retMessage[i], message[i]);
-    }
+    verifyArraysAreEqual(retMessage, retMessage);
 
     assertEquals(r * 9, message.length);
   }
@@ -72,19 +110,19 @@ class SpongeHash1600Output256ImplTest {
   void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr(final TestInfo testInfo) {
     // given
     final long[] message = new long[1024];
-    final int paddedMessageLength = message.length + 13;
+    final int paddedMessageLength = nearestGreaterMultiple(message.length, r / BITS_IN_LONG);
     message[0] = 1;
+
+    // when
     final long[] retMessage = spongeHashKeccak1600.applyPadding(message);
 
-    // when and then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(retMessage)));
+    // then
+    assertEquals(1024, message.length);
+    assertEquals(1037, retMessage.length);
 
     for (int i = 0; i < message.length; i++) {
-      assertEquals(retMessage[i], message[i]);
+      assertEquals(message[i], retMessage[i]);
     }
-
-    assertEquals(1024, message.length);
-
     for (int i = message.length; i < retMessage.length; i++) {
       assertEquals(0, retMessage[i]);
     }
@@ -104,37 +142,9 @@ class SpongeHash1600Output256ImplTest {
     for (int i = 0; i < message.length; i++) {
       assertEquals(retMessage[i], message[i]);
     }
+
     for (int i = message.length; i < retMessage.length; i++) {
       assertEquals(retMessage[i], 0);
-    }
-  }
-
-  @Test
-  void shouldThrowException_WhenStateLengthIsNot25(final TestInfo testInfo) {
-    // given & when
-    final RuntimeException ex =
-        assertThrows(
-            RuntimeException.class,
-            () -> spongeHashKeccak1600.initState(new long[1]),
-            String.format(
-                "The test %s failed on asserting an exception", testInfo.getDisplayName()));
-
-    // then
-    assertEquals(
-        "Incorrect size of state. Should be 200 Bytes (25 Longs) (1600 bits).", ex.getMessage());
-  }
-
-  @Test
-  void shouldInitStateWithValue_WhenStateLengthIs200Bytes(final TestInfo testInfo) {
-    // given
-    final long[] state = new long[STATE_LONG_LENGTH];
-
-    // when
-    spongeHashKeccak1600.initState(state);
-
-    // then
-    for (long b : state) {
-      assertEquals(b, 1431655765L);
     }
   }
 
@@ -142,7 +152,7 @@ class SpongeHash1600Output256ImplTest {
   @Test
   void shouldNotThrowException_WhenCallingHashWithSmallMessage(final TestInfo testInfo) {
     // given
-    final int n = 1; // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = 1; // how many times will absorb phase iterate through message
     // 16 elements, just 1 before the max. 16 = r/bits_in_long - 1
     final long[] message = {
       0x7FFFFFFFFFFFFFFFL,
@@ -165,8 +175,8 @@ class SpongeHash1600Output256ImplTest {
 
     // when & then
     assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount);
   }
 
   @Tag("arrayVersion")
@@ -174,7 +184,7 @@ class SpongeHash1600Output256ImplTest {
   void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf1088(
       final TestInfo testInfo) {
     // given
-    final int n = 1; // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = 1;
     // 17 elements, because 17 Longs fit to 1088 bits
     final long[] message = {
       0x7FFFFFFFFFFFFFFFL,
@@ -196,9 +206,12 @@ class SpongeHash1600Output256ImplTest {
       0x30E2B50BB8D9C599L
     };
 
-    // when & then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
+    // when
+    final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+
+    // then
+    assertDoesNotThrow(hashAndAssertSize(hashedMessage));
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
     verifyPermFuncsGetCalledNTimesRoundTimes(1);
   }
 
@@ -207,7 +220,7 @@ class SpongeHash1600Output256ImplTest {
   void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf1088(
       final TestInfo testInfo) {
     // given
-    final int n = 2; // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = 2;
     // 18
     final long[] message = {
       0x7FFFFFFFFFFFFFFFL,
@@ -230,17 +243,20 @@ class SpongeHash1600Output256ImplTest {
       0x30E2B50BB8D9C532L
     };
 
-    // when & then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    // when
+    final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+
+    // then
+    assertDoesNotThrow(hashAndAssertSize(hashedMessage));
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount);
   }
 
   @Tag("arrayVersion")
   @Test
   void shouldNotThrowException_WhenCallingMessageHashWith40Longs(final TestInfo testInfo) {
     // given
-    final int n = 3; // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = 3; // how many times will absorb phase iterate through message
     // 40
     final long[] message = {
       0x7FFFFFFFFFFFFFFFL,
@@ -285,10 +301,13 @@ class SpongeHash1600Output256ImplTest {
       0x30E2B50BB8D9C532L
     };
 
-    // when & then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    // when
+    final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+
+    // then
+    assertDoesNotThrow(hashAndAssertSize(hashedMessage));
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount);
   }
 
   @Tag("arrayVersion")
@@ -296,20 +315,21 @@ class SpongeHash1600Output256ImplTest {
   void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage(final TestInfo testInfo) {
     // given
     final int arraySize = 102_393;
-    final int n =
+    final int absorbIterationsCount =
         (int)
             Math.ceil(
                 (double) arraySize
                     / ((double) r
                         / BITS_IN_LONG)); // how many times will absorb phase iterate through
-    // message
-
     final long[] message = new long[arraySize];
 
-    // when & then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(message)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    // when
+    final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+
+    // then
+    assertDoesNotThrow(hashAndAssertSize(hashedMessage));
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -319,23 +339,18 @@ class SpongeHash1600Output256ImplTest {
     // given
     final byte[] message = {33, -127, 10, 33, -127, 10, 33}; // 7
     final InputStream is = new ByteArrayInputStream(message);
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
 
-    // when & then
+    // when
     final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    // then
+    verifyArraysAreEqual(resStream, resArray);
     assertDoesNotThrow(hashAndAssertSize(resStream));
 
-    verify(spongeHashKeccak1600, times(n * 2)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n * 2);
+    verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2);
   }
 
   @Tag("streamVersion")
@@ -345,23 +360,17 @@ class SpongeHash1600Output256ImplTest {
     // given
     final byte[] message = {33, -127, 10, 33, -127, 10, 33, 11}; // 8
     final InputStream is = new ByteArrayInputStream(message);
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
 
     // when
     final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
     // then
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    verifyArraysAreEqual(resStream, resArray);
     assertDoesNotThrow(hashAndAssertSize(resStream));
-    verify(spongeHashKeccak1600, times(2 * n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(2 * n);
+    verify(spongeHashKeccak1600, times(2 * absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(2 * absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -371,23 +380,17 @@ class SpongeHash1600Output256ImplTest {
     // given
     final byte[] message = {33, -127, 10, 33, -127, 10, 33, 13}; // 8
     final InputStream is = new ByteArrayInputStream(message);
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
 
     // when
     final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
     // then
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    verifyArraysAreEqual(resStream, resArray);
     assertDoesNotThrow(hashAndAssertSize(resStream));
-    verify(spongeHashKeccak1600, times(2 * n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(2 * n);
+    verify(spongeHashKeccak1600, times(2 * absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(2 * absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -407,11 +410,7 @@ class SpongeHash1600Output256ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33,
       33, -127, 10, 33, -127, 10, 33, -127
     };
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
@@ -419,13 +418,11 @@ class SpongeHash1600Output256ImplTest {
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
     // then
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    verifyArraysAreEqual(resStream, resArray);
 
     assertDoesNotThrow(hashAndAssertSize(resStream));
-    verify(spongeHashKeccak1600, times(n * 2)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n * 2);
+    verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2);
   }
 
   @Tag("streamVersion")
@@ -446,23 +443,17 @@ class SpongeHash1600Output256ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 10
     };
     final InputStream is = new ByteArrayInputStream(message);
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
 
     // when
     final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
     // then
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    verifyArraysAreEqual(resStream, resArray);
     assertDoesNotThrow(hashAndAssertSize(resStream));
-    verify(spongeHashKeccak1600, times(2 * n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(2 * n);
+    verify(spongeHashKeccak1600, times(2 * absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(2 * absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -483,23 +474,17 @@ class SpongeHash1600Output256ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 11
     };
     final InputStream is = new ByteArrayInputStream(message);
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
 
     // when
     final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
     final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
     // then
-    for (int i = 0; i < resStream.length; i++) {
-      assertEquals(resArray[i], resStream[i]);
-    }
+    verifyArraysAreEqual(resStream, resArray);
     assertDoesNotThrow(hashAndAssertSize(resStream));
-    verify(spongeHashKeccak1600, times(2 * n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(2 * n);
+    verify(spongeHashKeccak1600, times(2 * absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(2 * absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -508,17 +493,16 @@ class SpongeHash1600Output256ImplTest {
     // given
     final int arraySize = 104_812;
     final byte[] message = new byte[arraySize];
-    final int n =
-        (int)
-            Math.ceil(
-                (double) (message.length * BITS_IN_BYTE)
-                    / r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length);
     final InputStream is = new ByteArrayInputStream(message);
 
-    // when & then
-    assertDoesNotThrow(hashAndAssertSize(spongeHashKeccak1600.hash(is, message.length)));
-    verify(spongeHashKeccak1600, times(n)).absorb(any(), any());
-    verifyPermFuncsGetCalledNTimesRoundTimes(n);
+    // when
+    final long[] hashedMessage = spongeHashKeccak1600.hash(is, message.length);
+
+    // then
+    assertDoesNotThrow(hashAndAssertSize(hashedMessage));
+    verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any());
+    verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount);
   }
 
   @Tag("streamVersion")
@@ -532,60 +516,24 @@ class SpongeHash1600Output256ImplTest {
         final InputStream is1 = new FileInputStream(filePath)) {
       final Path path = Paths.get(filePath);
       final int fileSize = (int) Files.size(path);
-      final int n =
-          (int)
-              Math.ceil(
-                  (double) (fileSize * BITS_IN_BYTE)
-                      / r); // how many times will absorb phase iterate through message
+      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(fileSize);
+      final byte[] byteArrayStream = toByteArray(is1, is1.available());
+      final long[] longArrayStream = byteArrayToLongArray(byteArrayStream);
 
       // when
       final long[] resStream = spongeHashKeccak1600.hash(is, fileSize);
-      final long[] resArray =
-          spongeHashKeccak1600.hash(byteArrayToLongArray(toByteArray(is1, is1.available())));
+      final long[] resArray = spongeHashKeccak1600.hash(longArrayStream);
 
       // then
-      for (int i = 0; i < resStream.length; i++) {
-        assertEquals(resArray[i], resStream[i]);
-      }
-      verify(spongeHashKeccak1600, times(n * 2)).absorb(any(), any());
-      verifyPermFuncsGetCalledNTimesRoundTimes(n * 2);
+      verifyArraysAreEqual(resStream, resArray);
+      verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any());
+      verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2);
     }
   }
-
-  private static byte[] toByteArray(InputStream inputStream, final int available)
-      throws IOException {
-    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    int nRead;
-    final byte[] data = new byte[available]; // Buffer size
-
-    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-      buffer.write(data, 0, nRead);
-    }
-
-    buffer.flush();
-    return buffer.toByteArray();
-  }
-
   private void verifyPermFuncsGetCalledNTimesRoundTimes(final int n) {
     verify(spongePermutationImpl, times(n * ROUNDS)).theta(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).rhoPi(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).chi(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).iota(any(), anyInt());
-  }
-
-  private static long[] byteArrayToLongArray(byte[] bytes) {
-
-    final long[] outBytes = new long[(int) Math.ceil((double) bytes.length / BYTES_IN_LONG)];
-
-    int padding = outBytes.length * BYTES_IN_LONG - bytes.length;
-    ByteBuffer buffer =
-        ByteBuffer.allocate(bytes.length + padding).put(bytes).put(new byte[padding]);
-    buffer.flip();
-    buffer.asLongBuffer().get(outBytes);
-    return outBytes;
-  }
-
-  private Executable hashAndAssertSize(final long[] spongeHashKeccak1600) {
-    return () -> assertEquals(OUTPUT_LENGTH_BITS / BITS_IN_LONG, spongeHashKeccak1600.length);
   }
 }

@@ -18,7 +18,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -241,35 +240,6 @@ public class SpongeHashImplTest {
       assertEquals(retMessage[i], 0);
     }
   }
-
-  @Test
-  void shouldThrowException_WhenStateLengthIsNot25(final TestInfo testInfo) {
-    // given & when
-    RuntimeException ex =
-        Assertions.assertThrows(
-            RuntimeException.class,
-            () -> spongeHashKeccak200.initState(new byte[1]),
-            String.format(
-                "The test %s failed on asserting an exception", testInfo.getDisplayName()));
-
-    // then
-    assertEquals("Incorrect size of state. Should be 25.", ex.getMessage());
-  }
-
-  @Test
-  void shouldInitStateWithValue_WhenStateLengthIs25(final TestInfo testInfo) {
-    // given
-    byte[] state = new byte[25];
-
-    // when
-    spongeHashKeccak200.initState(state);
-
-    // then
-    for (byte b : state) {
-      assertEquals(b, 0b01010101);
-    }
-  }
-
   private void verifyPermFuncsGetCalledNTimesRoundTimes(final int n) {
     verify(spongePermutationImpl, times(n * ROUNDS)).theta(any());
     verify(spongePermutationImpl, times(n * ROUNDS)).rhoPi(any());

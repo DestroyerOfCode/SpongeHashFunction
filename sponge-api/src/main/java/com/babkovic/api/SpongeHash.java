@@ -10,7 +10,7 @@ public interface SpongeHash<T> extends Hash<T> {
    */
   T applyPadding(final T message);
 
-  void initState(final T message);
+  T initState();
 
   void absorb(final T state, final T message);
 

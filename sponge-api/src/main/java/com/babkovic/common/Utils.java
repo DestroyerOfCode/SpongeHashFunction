@@ -15,4 +15,23 @@ public class Utils {
   }
 
   public static byte[] MOD_5 = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+
+  /**
+   * Calculates the nearest multiple of a number that is greater than the array size.
+   *
+   * @param arraySize The size of the array.
+   * @param number The number for which the nearest multiple is to be found.
+   * @return The nearest multiple of the number that is greater than the array size.
+   */
+  public static int nearestGreaterMultiple(int arraySize, int number) {
+    if (number <= 0) {
+      throw new IllegalArgumentException("Number must be greater than 0.");
+    }
+
+    int multiple = (arraySize / number) * number;
+    if (multiple < arraySize) {
+      multiple += number;
+    }
+    return multiple;
+  }
 }

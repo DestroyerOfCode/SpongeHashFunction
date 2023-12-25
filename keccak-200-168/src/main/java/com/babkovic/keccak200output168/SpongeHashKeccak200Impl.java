@@ -1,8 +1,6 @@
 package com.babkovic.keccak200output168;
 
 import static com.babkovic.keccak200output168.Constants.BITS_IN_BYTE;
-import static com.babkovic.keccak200output168.Constants.STATE_BYTE_LENGTH;
-import static com.babkovic.keccak200output168.Constants.b;
 import static com.babkovic.keccak200output168.Constants.r;
 
 import com.babkovic.api.SpongeHash;
@@ -10,7 +8,6 @@ import com.babkovic.api.SpongePermutation;
 import com.babkovic.exception.SpongeException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
 
@@ -24,11 +21,10 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
   public byte[] hash(byte[] message) {
     /* b is size in bits, 8 is size of byte on every architecture.
     So if b=200, it allocates 25 bytes */
-    final byte[] state = new byte[b / BITS_IN_BYTE];
+    final byte[] state = initState();
     final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
 
     message = applyPadding(message);
-    initState(state);
 
     for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
       // message block is the 168 bits (21 bytes)
@@ -44,9 +40,8 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
   public byte[] hash(final InputStream message, final int messageSize) {
     /* b is size in bits, 8 is size of byte on every architecture.
     So if b=200, it allocates 25 bytes */
-    final byte[] state = new byte[b / BITS_IN_BYTE];
+    final byte[] state = initState();
     final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
-    initState(state);
 
     try {
       // message block is the 168 bits (21 bytes)
@@ -83,13 +78,12 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
   }
 
   @Override
-  public void initState(final byte[] state) {
-    if (STATE_BYTE_LENGTH != state.length) {
-      throw new RuntimeException("Incorrect size of state. Should be 25.");
-    }
-
-    // in later stages apply different initial values for improved security. this is just pro forma
-    Arrays.fill(state, (byte) 0b01010101);
+  public byte[] initState() {
+    // random 25 bytes
+    return new byte[] {
+      113, -77, 65, -26, -43, -17, 83, -4, -15, -24, -116, -16, 120, -82, -89, -57, -39, 93, 59, 10,
+      -92, 16, -119, -91, 1
+    };
   }
 
   @Override

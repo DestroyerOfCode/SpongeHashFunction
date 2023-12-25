@@ -1,10 +1,9 @@
 package com.babkovic.keccak1600output256;
 
+import static com.babkovic.common.Utils.nearestGreaterMultiple;
 import static com.babkovic.keccak1600output256.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak1600output256.Constants.BITS_IN_LONG;
 import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
-import static com.babkovic.keccak1600output256.Constants.STATE_LONG_LENGTH;
-import static com.babkovic.keccak1600output256.Constants.b;
 import static com.babkovic.keccak1600output256.Constants.r;
 
 import com.babkovic.api.SpongeHash;
@@ -14,7 +13,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
 
@@ -30,11 +28,10 @@ public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
     So if b=1600, it allocates 25 Longs
     and if r=1088, it allocated 18 Longs
     */
-    final long[] state = new long[b / BITS_IN_LONG];
+    final long[] state = initState();
     final long[] messageBlock = new long[r / BITS_IN_LONG];
 
     message = applyPadding(message);
-    initState(state);
 
     try {
       for (int i = 0; i < message.length; i += r / BITS_IN_LONG) {
@@ -57,11 +54,11 @@ public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
     and if r=1088, it allocated 18 Longs
     */
 
-    final long[] state = new long[b / BITS_IN_LONG]; // 25
+    final long[] state = initState();
+    ; // 25
     long[] messageBlock = new long[r / BITS_IN_LONG]; // 17
     final DataInputStream message = new DataInputStream(messageStream);
 
-    initState(state);
     try {
       // message block is the 1088 bits (17 bytes)
       // from the original message copy 1088 bits to the message block
@@ -111,36 +108,35 @@ public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
     return paddedMessage;
   }
 
-  /**
-   * Calculates the nearest multiple of a number that is greater than the array size.
-   *
-   * @param arraySize The size of the array.
-   * @param number The number for which the nearest multiple is to be found.
-   * @return The nearest multiple of the number that is greater than the array size.
-   */
-  private static int nearestGreaterMultiple(int arraySize, int number) {
-    if (number <= 0) {
-      throw new IllegalArgumentException("Number must be greater than 0.");
-    }
-
-    int multiple = (arraySize / number) * number;
-    if (multiple < arraySize) {
-      multiple += number;
-    }
-    return multiple;
-  }
-
   @Override
-  public void initState(final long[] state) {
-    if (STATE_LONG_LENGTH != state.length) {
-      throw new RuntimeException(
-          String.format(
-              "Incorrect size of state. Should be %d Bytes (%d Longs) (%d bits).",
-              STATE_LONG_LENGTH * Long.BYTES, STATE_LONG_LENGTH, b));
-    }
-
-    // in later stages apply different initial values for improved security. this is just pro forma
-    Arrays.fill(state, 1431655765L);
+  public long[] initState() {
+    return new long[] {
+      1512438630783188661L,
+      8198716176144688777L,
+      1637884160694766545L,
+      1763068439375808596L,
+      3323231908170204617L,
+      631703399715668548L,
+      1530395573530499759L,
+      1483770803502517068L,
+      6746053807561825751L,
+      8289798442804673757L,
+      6229518946956962360L,
+      265492940621606881L,
+      6133650358006886469L,
+      1640423390081412490L,
+      1218238834902968216L,
+      1886528811272012332L,
+      644790174577108009L,
+      1673022507320370160L,
+      4996237436508233008L,
+      1786917405949476368L,
+      4331592739472745193L,
+      1624126196739263612L,
+      3883847296014053403L,
+      7589786689989931013L,
+      7492938352285470026L
+    };
   }
 
   @Override
