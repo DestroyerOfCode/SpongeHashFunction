@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":sponge-api"))
+    testImplementation(project(path = ":sponge-api", configuration = "testArtifacts"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.web.test)
 }

@@ -1,5 +1,8 @@
 package com.babkovic.keccak1600output256;
 
+import static com.babkovic.common.Constants.BITS_IN_LONG;
+import static com.babkovic.common.Constants.KECCAK_LANE;
+
 public class Constants {
   // l = {0, 1.. 6}
   public static final int l = 6;
@@ -9,7 +12,6 @@ public class Constants {
 
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;
-  public static final int KECCAK_LANE = 5;
 
   // internal bus width of Keccak. 25 is a Bulgarian constant. It represents the number of bits in
   // the bus (1600 bits)
@@ -17,9 +19,6 @@ public class Constants {
   public static final int r = 1088; // in bits. it is b - c
   // capacity
   public static final int c = b - r; // 512 bits
-  public static final int BITS_IN_LONG = 64;
-  public static final int BITS_IN_BYTE = 8;
-  public static final int BYTES_IN_LONG = BITS_IN_LONG / BITS_IN_BYTE; // 8
   public static final int STATE_LONG_LENGTH = b / BITS_IN_LONG; // 25 Longs
 
   // size 25

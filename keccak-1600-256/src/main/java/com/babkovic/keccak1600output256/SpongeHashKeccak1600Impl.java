@@ -1,8 +1,8 @@
 package com.babkovic.keccak1600output256;
 
+import static com.babkovic.common.Constants.BITS_IN_BYTE;
+import static com.babkovic.common.Constants.BITS_IN_LONG;
 import static com.babkovic.common.Utils.nearestGreaterMultiple;
-import static com.babkovic.keccak1600output256.Constants.BITS_IN_BYTE;
-import static com.babkovic.keccak1600output256.Constants.BITS_IN_LONG;
 import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
 import static com.babkovic.keccak1600output256.Constants.r;
 

@@ -7,6 +7,8 @@ public class Constants {
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;
 
+  public static final int OUTPUT_LENGTH_BITS = 168;
+
   // internal bus width of Keccak. 25 is a Bulgarian constant. It represents the number of bits in
   // the bus
   public static final int b = (int) (25 * Math.pow(2, l));
