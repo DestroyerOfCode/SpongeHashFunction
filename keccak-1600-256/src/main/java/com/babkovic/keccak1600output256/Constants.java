@@ -1,6 +1,8 @@
 package com.babkovic.keccak1600output256;
 
+import static com.babkovic.common.Constants.BITS_IN_BYTE;
 import static com.babkovic.common.Constants.BITS_IN_LONG;
+import static com.babkovic.common.Constants.BYTES_IN_LONG;
 import static com.babkovic.common.Constants.KECCAK_LANE;
 
 public class Constants {
@@ -9,6 +11,8 @@ public class Constants {
 
   // this is also the size of a message block in the squeezing phase
   public static final int OUTPUT_LENGTH_BITS = 256;
+  public static final int OUTPUT_LENGTH_BYTES = OUTPUT_LENGTH_BITS / BITS_IN_BYTE;
+  public static final int OUTPUT_LENGTH_LONGS = OUTPUT_LENGTH_BYTES / BYTES_IN_LONG;
 
   // number of rounds
   public static final int ROUNDS = 12 + 2 * l;

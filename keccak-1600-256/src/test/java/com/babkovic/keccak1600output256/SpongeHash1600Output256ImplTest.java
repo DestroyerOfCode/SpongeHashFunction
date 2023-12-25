@@ -8,11 +8,10 @@ import static com.babkovic.TestUtils.verifyArraysAreEqual;
 import static com.babkovic.common.Constants.BITS_IN_LONG;
 import static com.babkovic.common.Constants.BYTES_IN_LONG;
 import static com.babkovic.common.Utils.nearestGreaterMultiple;
-import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
+import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_LONGS;
 import static com.babkovic.keccak1600output256.Constants.ROUNDS;
 import static com.babkovic.keccak1600output256.Constants.r;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -76,9 +75,7 @@ class SpongeHash1600Output256ImplTest {
       final long[] retMessage = spongeHashKeccak1600.applyPadding(message);
 
       // then
-      assertAll(
-          () -> verifyArraysAreEqual(retMessage, retMessage),
-          () -> assertEquals(r * 9, message.length));
+      assertAll(() -> assertEquals(1L, retMessage[0]), () -> assertEquals(r * 9, message.length));
     }
 
     @Test
@@ -169,7 +166,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -207,7 +204,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -246,7 +243,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -307,7 +304,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -319,11 +316,7 @@ class SpongeHash1600Output256ImplTest {
       // given
       final int arraySize = 102_393;
       final int absorbIterationsCount =
-          (int)
-              Math.ceil(
-                  (double) arraySize
-                      / ((double) r
-                          / BITS_IN_LONG)); // how many times will absorb phase iterate through
+          calculateNumberOfAbsorbIterations(arraySize * BYTES_IN_LONG, r);
       final long[] message = new long[arraySize];
 
       // when
@@ -331,7 +324,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -358,8 +351,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -381,8 +374,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -404,8 +397,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -438,8 +431,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -472,8 +465,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -506,8 +499,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -527,7 +520,7 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -553,7 +546,7 @@ class SpongeHash1600Output256ImplTest {
 
         // then
         assertAll(
-            () -> verifyArraysAreEqual(resStream, resArray),
+            verifyArraysAreEqual(resStream, resArray),
             () ->
                 verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
             () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
@@ -584,8 +577,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }
@@ -612,8 +605,8 @@ class SpongeHash1600Output256ImplTest {
 
       // then
       assertAll(
-          () -> verifyArraysAreEqual(resStream, resArray),
-          () -> assertDoesNotThrow(hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+          verifyArraysAreEqual(resStream, resArray),
+          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
           () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
     }

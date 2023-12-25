@@ -18,9 +18,9 @@ public class Constants {
   // called the bit rate. r is equal to the length of one message block
   // this value is up to debate. It is also the output size.
   public static final int r = 168;
+  public static final int BYTES_IN_r = r / BITS_IN_BYTE;
   // capacity
-  public static final int c = b - r;
-  public static final int KECCAK_LANE = 5;
+  public static final int c = b - r; // 32
 
   // size 25
   public static byte[] KECCAK_200_PI_LANE = {

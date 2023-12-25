@@ -1,8 +1,7 @@
 package com.babkovic.keccak200output168;
 
-import static com.babkovic.common.Constants.BITS_IN_BYTE;
 import static com.babkovic.common.Utils.nearestGreaterMultiple;
-import static com.babkovic.keccak200output168.Constants.r;
+import static com.babkovic.keccak200output168.Constants.BYTES_IN_r;
 
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
@@ -23,14 +22,14 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
     /* b is size in bits, 8 is size of byte on every architecture.
     So if b=200, it allocates 25 bytes */
     final byte[] state = initState();
-    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
+    final byte[] messageBlock = new byte[BYTES_IN_r];
 
     message = applyPadding(message);
 
-    for (int i = 0; i < message.length; i += r / BITS_IN_BYTE) {
+    for (int i = 0; i < message.length; i += BYTES_IN_r) {
       // message block is the 168 bits (21 bytes)
       // from the original message copy 168 bits to the message block
-      System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_BYTE);
+      System.arraycopy(message, i, messageBlock, 0, BYTES_IN_r);
       absorb(state, messageBlock);
     }
 
@@ -46,11 +45,11 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
     try {
       // message block is the 168 bits (21 bytes)
       // from the original message copy 168 bits to the message block
-      for (int i = 0; messageSizeBytes > i; i += r / BITS_IN_BYTE) {
-        byte[] messageBlock = new byte[r / BITS_IN_BYTE];
-        int readBytes = message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
+      for (int i = 0; messageSizeBytes > i; i += BYTES_IN_r) {
+        byte[] messageBlock = new byte[BYTES_IN_r];
+        int readBytes = message.readNBytes(messageBlock, 0, BYTES_IN_r);
 
-        if (readBytes < r / BITS_IN_BYTE) {
+        if (readBytes < BYTES_IN_r) {
           messageBlock = applyPadding(messageBlock);
         }
         absorb(state, messageBlock);
@@ -64,7 +63,7 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
   @Override
   public byte[] applyPadding(final byte[] message) {
     int originalLength = message.length;
-    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_BYTE); // 136
+    int paddedLength = nearestGreaterMultiple(originalLength, BYTES_IN_r); // 136
 
     final byte[] paddedMessage = new byte[paddedLength];
     System.arraycopy(message, 0, paddedMessage, 0, originalLength);
@@ -94,7 +93,7 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
 
   @Override
   public byte[] squeeze(final byte[] message, final int outputOffsetPosition) {
-    final byte[] retArr = new byte[r / BITS_IN_BYTE];
+    final byte[] retArr = new byte[BYTES_IN_r];
     // use the first r bits to squeeze out the output
     System.arraycopy(message, 0, retArr, outputOffsetPosition, retArr.length);
 

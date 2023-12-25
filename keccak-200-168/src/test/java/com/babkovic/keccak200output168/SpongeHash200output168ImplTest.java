@@ -1,13 +1,13 @@
 package com.babkovic.keccak200output168;
 
 import static com.babkovic.TestUtils.calculateNumberOfAbsorbIterations;
+import static com.babkovic.TestUtils.hashAndAssertOutputSize;
 import static com.babkovic.TestUtils.verifyArraysAreEqual;
-import static com.babkovic.common.Constants.BITS_IN_BYTE;
-import static com.babkovic.keccak200output168.Constants.OUTPUT_LENGTH_BITS;
+import static com.babkovic.keccak200output168.Constants.BYTES_IN_r;
+import static com.babkovic.keccak200output168.Constants.OUTPUT_LENGTH_BYTES;
 import static com.babkovic.keccak200output168.Constants.ROUNDS;
 import static com.babkovic.keccak200output168.Constants.r;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.babkovic.TestUtils;
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
 import com.babkovic.exception.SpongeException;
@@ -61,7 +60,7 @@ public class SpongeHash200output168ImplTest {
   @DisplayName("Apply padding without multiple of 'r': should correctly pad the message")
   void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr() {
     // given
-    byte[] message = new byte[r / BITS_IN_BYTE + 1];
+    byte[] message = new byte[BYTES_IN_r + 1];
     message[0] = 1;
 
     // when
@@ -119,9 +118,7 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
@@ -130,7 +127,7 @@ public class SpongeHash200output168ImplTest {
   @DisplayName("Apply padding with multiple of 'r': should return the original message unchanged")
   void shouldReturnOriginalMessage_WhenApplyPaddingWithMultipleOfr() {
     // given
-    final byte[] message = new byte[r / BITS_IN_BYTE * 9];
+    final byte[] message = new byte[BYTES_IN_r * 9];
     message[0] = 1; // just to check if all bytes are not set to null
     // when
     final byte[] retMessage = spongeHashKeccak200.applyPadding(message);
@@ -161,9 +158,7 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
@@ -185,9 +180,7 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
@@ -205,9 +198,7 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
@@ -228,21 +219,9 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> assertEquals(hashedArrayMessage.length, hashedStreamMessage.length),
-        () -> {
-          for (int i = 0; i < hashedStreamMessage.length; i++) {
-            assertEquals(hashedArrayMessage[i], hashedStreamMessage[i]);
-          }
-        },
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
+        hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+        hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
@@ -266,21 +245,9 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> assertEquals(hashedArrayMessage.length, hashedStreamMessage.length),
-        () -> {
-          for (int i = 0; i < hashedStreamMessage.length; i++) {
-            assertEquals(hashedArrayMessage[i], hashedStreamMessage[i]);
-          }
-        },
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
+        hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+        hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
@@ -305,13 +272,9 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+        hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+        hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
@@ -321,7 +284,7 @@ public class SpongeHash200output168ImplTest {
   @DisplayName("Hashing a long message stream: should complete without exceptions")
   void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() {
     // given
-    final byte[] message = new byte[104_81];
+    final byte[] message = new byte[10_481];
     final int absorbIterationsCount =
         calculateNumberOfAbsorbIterations(
             message.length, r); // how many times will absorb phase iterate through message
@@ -333,13 +296,9 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
-        () ->
-            assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+        hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+        hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
@@ -359,9 +318,7 @@ public class SpongeHash200output168ImplTest {
 
       // then
       assertAll(
-          () ->
-              assertDoesNotThrow(
-                  TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
+          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
           () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
           () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
     }
@@ -385,8 +342,8 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> verifyArraysAreEqual(resStream, resArray),
-        () -> assertDoesNotThrow(TestUtils.hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(resStream, resArray),
+        hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
@@ -410,8 +367,8 @@ public class SpongeHash200output168ImplTest {
 
     // then
     assertAll(
-        () -> verifyArraysAreEqual(resStream, resArray),
-        () -> assertDoesNotThrow(TestUtils.hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
+        verifyArraysAreEqual(resStream, resArray),
+        hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BYTES),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }

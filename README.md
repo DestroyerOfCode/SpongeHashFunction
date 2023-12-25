@@ -2,12 +2,16 @@
 
 ## Overview
 
-The project consists of 2 modules:
+The project consists of 3 modules:
 
 1. **sponge-api**: Provides a blueprint or template for various implementations of the Keccak function. As of right now
-   the keccak-200 and keccak-1600 are implemented. The latter is implemented with r=1152 and c=448 and output 224 bits
-   long. This means that it is faster because the message blocks have more size but on the other hand the size is not
-   very big. Other possible solution for bigger output (512) is to have a block size of 576 bits and c 1024.
+   the keccak-200 and keccak-1600 are implemented.
+2. **keccak-1600-256**: Implemented with r=1088 and c=512 and output 256 bits
+   long. The hash method can be called without knowing the size of the message, or knowing it.
+   In the former case, the message is an InputStream, in the second case it is a long[].
+3. **keccak-200-168**: Implemented with r=168 and c=32 and outputs 168 bits long.
+   The hash method can be called without knowing the size of the message, or knowing it.
+   In the former case, the message is an InputStream, in the second case it is a byte[].
 
 ## Implementation
 
@@ -26,12 +30,26 @@ The former is preferred for its lower memory requirements.
 3. Create the objects:
 
 ```java
-Permutation permutation = new PermutationImpl();
-Hash hash = new SpongeHashKeccak200Impl(permutation);
-hash.
+final Permutation permutation = new PermutationImpl();
+final byte[] message = {33, -127, 10, 33, -127, 10, 33}; // 7
+final InputStream is = new ByteArrayInputStream(message);
+final Hash hashImpl = new SpongeHashKeccak200Impl(permutation);
 
-hash(message, messageSize);
+hashImpl.
+
+hash(message, message.length);
 ```
 
+**or**
+
+```java
+final Permutation permutation = new PermutationImpl();
+final byte[] bytes = new byte[1];
+final Hash hashImpl = new SpongeHashKeccak200Impl(permutation);
+
+hashImpl.
+
+hash(message);
+```
 Where messageSize is the size of the message in bits and the message is a stream of data.
 

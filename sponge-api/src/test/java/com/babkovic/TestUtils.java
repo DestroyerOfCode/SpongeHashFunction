@@ -1,7 +1,6 @@
 package com.babkovic;
 
 import static com.babkovic.common.Constants.BITS_IN_BYTE;
-import static com.babkovic.common.Constants.BITS_IN_LONG;
 import static com.babkovic.common.Constants.BYTES_IN_LONG;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,24 +13,36 @@ import org.junit.jupiter.api.function.Executable;
 
 public class TestUtils {
 
-  public static void verifyArraysAreEqual(final long[] arr1, final long[] arr2) {
-    assertAll(
-        () -> assertEquals(arr1.length, arr2.length),
-        () -> {
-          for (int i = 0; i < arr1.length; i++) {
-            assertEquals(arr2[i], arr1[i]);
-          }
-        });
+  public static Executable verifyArraysAreEqual(final long[] arr1, final long[] arr2) {
+    return () ->
+        assertAll(
+            () -> assertEquals(arr1.length, arr2.length),
+            () -> {
+              for (int i = 0; i < arr1.length; i++) {
+                assertEquals(arr2[i], arr1[i]);
+              }
+            });
   }
 
-  public static void verifyArraysAreEqual(final byte[] arr1, final byte[] arr2) {
-    assertAll(
-        () -> assertEquals(arr1.length, arr2.length),
-        () -> {
-          for (int i = 0; i < arr1.length; i++) {
-            assertEquals(arr2[i], arr1[i]);
-          }
-        });
+  public static Executable verifyArraysAreEqual(final byte[] arr1, final byte[] arr2) {
+    return () ->
+        assertAll(
+            () -> assertEquals(arr1.length, arr2.length),
+            () -> {
+              for (int i = 0; i < arr1.length; i++) {
+                assertEquals(arr2[i], arr1[i]);
+              }
+            });
+  }
+
+  public static Executable hashAndAssertOutputSize(
+      final long[] message, final int outputLengthBytes) {
+    return () -> assertEquals(outputLengthBytes, message.length);
+  }
+
+  public static Executable hashAndAssertOutputSize(
+      final byte[] message, final int outputLengthBytes) {
+    return () -> assertEquals(outputLengthBytes, message.length);
   }
 
   public static int calculateNumberOfAbsorbIterations(final int fileSize, final int r) {
@@ -62,15 +73,5 @@ public class TestUtils {
     buffer.flip();
     buffer.asLongBuffer().get(outBytes);
     return outBytes;
-  }
-
-  public static Executable hashAndAssertOutputSize(
-      final long[] message, final int outputLengthBytes) {
-    return () -> assertEquals(outputLengthBytes / BITS_IN_LONG, message.length);
-  }
-
-  public static Executable hashAndAssertOutputSize(
-      final byte[] message, final int outputLengthBytes) {
-    return () -> assertEquals(outputLengthBytes / BITS_IN_BYTE, message.length);
   }
 }
