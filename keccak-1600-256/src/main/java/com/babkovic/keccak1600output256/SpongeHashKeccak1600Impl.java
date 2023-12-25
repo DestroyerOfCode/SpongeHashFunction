@@ -53,10 +53,8 @@ public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
     So if b=1600, it allocates 25 Longs
     and if r=1088, it allocated 18 Longs
     */
-
-    final long[] state = initState();
-    ; // 25
-    long[] messageBlock = new long[r / BITS_IN_LONG]; // 17
+    final long[] state = initState(); // 25 Longs, 200 Bytes, 1600 Bits
+    long[] messageBlock = new long[r / BITS_IN_LONG]; // 17 Longs, 136 Bytes, 1088 Bits
     final DataInputStream message = new DataInputStream(messageStream);
 
     try {
@@ -83,7 +81,7 @@ public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
       // returns first
       return squeeze(state);
     } catch (IOException e) {
-      throw new SpongeException("An error has occurred when hashing:", e);
+      throw new SpongeException("An error has occurred when hashing: ", e);
     }
   }
 

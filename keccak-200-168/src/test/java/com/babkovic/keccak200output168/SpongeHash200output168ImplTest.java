@@ -2,22 +2,26 @@ package com.babkovic.keccak200output168;
 
 import static com.babkovic.TestUtils.calculateNumberOfAbsorbIterations;
 import static com.babkovic.TestUtils.verifyArraysAreEqual;
-import static com.babkovic.keccak200output168.Constants.BITS_IN_BYTE;
+import static com.babkovic.common.Constants.BITS_IN_BYTE;
 import static com.babkovic.keccak200output168.Constants.OUTPUT_LENGTH_BITS;
 import static com.babkovic.keccak200output168.Constants.ROUNDS;
 import static com.babkovic.keccak200output168.Constants.r;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.babkovic.TestUtils;
 import com.babkovic.api.SpongeHash;
 import com.babkovic.api.SpongePermutation;
+import com.babkovic.exception.SpongeException;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -287,6 +291,7 @@ public class SpongeHash200output168ImplTest {
       "Hashing a stream message of length not multiple of 168: should yield consistent results")
   void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf168() {
     // given
+    // 22 bytes
     final byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       127, 3
@@ -295,15 +300,20 @@ public class SpongeHash200output168ImplTest {
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
-    final byte[] hashedMessage = spongeHashKeccak200.hash(is, message.length);
+    final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+    final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
 
     // then
     assertAll(
+        () -> verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
         () ->
             assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
+        () ->
+            assertDoesNotThrow(
+                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
 
   @Tag("streamVersion")
@@ -311,20 +321,27 @@ public class SpongeHash200output168ImplTest {
   @DisplayName("Hashing a long message stream: should complete without exceptions")
   void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() {
     // given
-    final int n = 4992; // how many times will absorb phase iterate through message
-    byte[] message = new byte[1_048_12];
+    final byte[] message = new byte[104_81];
+    final int absorbIterationsCount =
+        calculateNumberOfAbsorbIterations(
+            message.length, r); // how many times will absorb phase iterate through message
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
-    final byte[] hashedMessage = spongeHashKeccak200.hash(is, message.length);
+    final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+    final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
 
     // then
     assertAll(
+        () -> verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
         () ->
             assertDoesNotThrow(
-                TestUtils.hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BITS)),
-        () -> verify(spongeHashKeccak200, times(n)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(n));
+                TestUtils.hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BITS)),
+        () ->
+            assertDoesNotThrow(
+                TestUtils.hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BITS)),
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
   }
 
   @Tag("streamVersion")
@@ -397,6 +414,19 @@ public class SpongeHash200output168ImplTest {
         () -> assertDoesNotThrow(TestUtils.hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_BITS)),
         () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
         () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+  }
+
+  @Test
+  @DisplayName("Test Hash Stream Throws Exception")
+  void testHashStreamThrowsException() throws IOException {
+    // given
+    final InputStream mockInputStream = mock(InputStream.class);
+    when(mockInputStream.readNBytes(any(), anyInt(), anyInt())).thenThrow(IOException.class);
+
+    // when & then
+    final SpongeException spongeException =
+        assertThrows(SpongeException.class, () -> spongeHashKeccak200.hash(mockInputStream, 1));
+    assertEquals("An error has occurred when hashing: ", spongeException.getMessage());
   }
 
   private void verifyPermFuncsGetCalledNTimesRoundTimes(final int n) {

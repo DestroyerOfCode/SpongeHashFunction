@@ -1,6 +1,7 @@
 package com.babkovic.keccak200output168;
 
-import static com.babkovic.keccak200output168.Constants.BITS_IN_BYTE;
+import static com.babkovic.common.Constants.BITS_IN_BYTE;
+import static com.babkovic.common.Utils.nearestGreaterMultiple;
 import static com.babkovic.keccak200output168.Constants.r;
 
 import com.babkovic.api.SpongeHash;
@@ -37,44 +38,38 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
   }
 
   @Override
-  public byte[] hash(final InputStream message, final int messageSize) {
+  public byte[] hash(final InputStream message, final int messageSizeBytes) {
     /* b is size in bits, 8 is size of byte on every architecture.
     So if b=200, it allocates 25 bytes */
     final byte[] state = initState();
-    final byte[] messageBlock = new byte[r / BITS_IN_BYTE];
 
     try {
       // message block is the 168 bits (21 bytes)
       // from the original message copy 168 bits to the message block
-      for (int i = 0; messageSize > i; i += r / BITS_IN_BYTE) {
-        message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
+      for (int i = 0; messageSizeBytes > i; i += r / BITS_IN_BYTE) {
+        byte[] messageBlock = new byte[r / BITS_IN_BYTE];
+        int readBytes = message.readNBytes(messageBlock, 0, r / BITS_IN_BYTE);
+
+        if (readBytes < r / BITS_IN_BYTE) {
+          messageBlock = applyPadding(messageBlock);
+        }
         absorb(state, messageBlock);
       }
       return squeeze(state);
     } catch (IOException e) {
-      throw new SpongeException("An error has occurred when hashing:", e);
+      throw new SpongeException("An error has occurred when hashing: ", e);
     }
   }
 
   @Override
   public byte[] applyPadding(final byte[] message) {
-    if (message.length < r / BITS_IN_BYTE) {
-      final byte[] paddedMessage = new byte[r / BITS_IN_BYTE];
-      System.arraycopy(message, 0, paddedMessage, 0, message.length);
-      return paddedMessage;
-    }
+    int originalLength = message.length;
+    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_BYTE); // 136
 
-    int messageLengthOffsetInBytes = (message.length) % (r / BITS_IN_BYTE);
-    if (messageLengthOffsetInBytes != 0) {
-      // we need to add as many bytes as we need for the closes multiple of 168 bits (21 bytes
-      // resp.)
-      // we get that by message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)
-      final byte[] paddedMessage =
-          new byte[message.length + (r / BITS_IN_BYTE - messageLengthOffsetInBytes)];
-      System.arraycopy(message, 0, paddedMessage, 0, message.length);
-      return paddedMessage;
-    }
-    return message;
+    final byte[] paddedMessage = new byte[paddedLength];
+    System.arraycopy(message, 0, paddedMessage, 0, originalLength);
+
+    return paddedMessage;
   }
 
   @Override
