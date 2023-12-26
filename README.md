@@ -35,9 +35,7 @@ final byte[] message = {33, -127, 10, 33, -127, 10, 33}; // 7
 final InputStream is = new ByteArrayInputStream(message);
 final Hash hashImpl = new SpongeHashKeccak200Impl(permutation);
 
-hashImpl.
-
-hash(message, message.length);
+hashImpl.hash(message, message.length);
 ```
 
 **or**
@@ -47,10 +45,11 @@ final Permutation permutation = new PermutationImpl();
 final byte[] bytes = new byte[1];
 final Hash hashImpl = new SpongeHashKeccak200Impl(permutation);
 
-hashImpl.
-
-hash(message);
+hashImpl.hash(message);
 ```
 
 Where messageSize is the size of the message in bits and the message is a stream of data.
 
+## REQUIREMENTS
+
+1. Java 21
