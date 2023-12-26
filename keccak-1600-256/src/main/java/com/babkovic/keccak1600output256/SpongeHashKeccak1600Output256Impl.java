@@ -14,14 +14,30 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+/**
+ * Implementation of the Keccak sponge hash function with 1600-bit state and 256-bit output. This
+ * class performs the hash operation using the sponge construction, where the message is absorbed
+ * into the state and the hash is squeezed out.
+ */
 public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
 
   private final SpongePermutation<long[]> spongePermutation;
 
+  /**
+   * Constructs a new SpongeHashKeccak1600Output256Impl instance.
+   *
+   * @param spongePermutation The permutation function to be used in the sponge construction.
+   */
   public SpongeHashKeccak1600Output256Impl(final SpongePermutation<long[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 
+  /**
+   * Hashes the given long array message.
+   *
+   * @param message The message to be hashed.
+   * @return The hashed output as a long array.
+   */
   @Override
   public long[] hash(long[] message) {
     /* b is size in bits, 64 is size of Long on every architecture.
@@ -47,6 +63,13 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
     }
   }
 
+  /**
+   * Hashes the message read from an InputStream.
+   *
+   * @param messageStream The InputStream from which the message is read.
+   * @param messageSizeBytes The size of the message in bytes.
+   * @return The hashed output as a long array.
+   */
   @Override
   public long[] hash(final InputStream messageStream, final int messageSizeBytes) {
     /* b is size in bits, 64 is size of Long on every architecture.
@@ -85,22 +108,18 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
     }
   }
 
+  /**
+   * Applies the necessary padding to the given long array message.
+   *
+   * @param message The original message array.
+   * @return The padded message array.
+   */
   @Override
   public long[] applyPadding(final long[] message) {
     int originalLength = message.length;
     int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_LONG); // 17
 
     final long[] paddedMessage = new long[paddedLength];
-    System.arraycopy(message, 0, paddedMessage, 0, originalLength);
-
-    return paddedMessage;
-  }
-
-  public byte[] applyPadding(final byte[] message) {
-    int originalLength = message.length;
-    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_BYTE); // 136
-
-    final byte[] paddedMessage = new byte[paddedLength];
     System.arraycopy(message, 0, paddedMessage, 0, originalLength);
 
     return paddedMessage;
@@ -160,10 +179,29 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
   /**
    * mixing the message block with the current state. this methods xors first 1088 bits of the state
    * with first 1088 bits of the message. 1088 bits because that is the length of r of the message.
+   *
+   * @param state The current state of the hash function.
+   * @param message The message to be mixed with the state.
    */
   private static void mixStateAndMessage(final long[] state, final long[] message) {
     for (int i = 0; i < message.length; i++) {
       state[i] = message[i] ^ state[i];
     }
+  }
+
+  /**
+   * Applies padding to the given byte array message.
+   *
+   * @param message The original byte array message.
+   * @return The padded byte array message.
+   */
+  private static byte[] applyPadding(final byte[] message) {
+    int originalLength = message.length;
+    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_BYTE); // 136
+
+    final byte[] paddedMessage = new byte[paddedLength];
+    System.arraycopy(message, 0, paddedMessage, 0, originalLength);
+
+    return paddedMessage;
   }
 }

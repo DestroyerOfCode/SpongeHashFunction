@@ -9,14 +9,29 @@ import com.babkovic.exception.SpongeException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Implements the SpongeHash interface for Keccak-200 with an output of 168 bits. This class
+ * provides methods to hash byte arrays using the Keccak-200 sponge construction.
+ */
 public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
 
   private final SpongePermutation<byte[]> spongePermutation;
 
+  /**
+   * Constructs a new SpongeHashKeccak200Output168Impl instance.
+   *
+   * @param spongePermutation The sponge permutation instance to be used in the hashing process.
+   */
   public SpongeHashKeccak200Output168Impl(final SpongePermutation<byte[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 
+  /**
+   * Hashes a byte array using the Keccak-200 sponge construction.
+   *
+   * @param message The byte array to be hashed.
+   * @return The hashed byte array.
+   */
   @Override
   public byte[] hash(byte[] message) {
     /* b is size in bits, 8 is size of byte on every architecture.
@@ -36,6 +51,14 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
     return squeeze(state);
   }
 
+  /**
+   * Hashes data from an InputStream using the Keccak-200 sponge construction.
+   *
+   * @param message The InputStream containing the data to hash.
+   * @param messageSizeBytes The size of the data in bytes.
+   * @return The hashed byte array.
+   * @throws SpongeException If an I/O error occurs.
+   */
   @Override
   public byte[] hash(final InputStream message, final int messageSizeBytes) {
     /* b is size in bits, 8 is size of byte on every architecture.
@@ -60,6 +83,12 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
     }
   }
 
+  /**
+   * Applies padding to the message to fit the sponge construction requirements.
+   *
+   * @param message The original byte array message.
+   * @return The padded byte array.
+   */
   @Override
   public byte[] applyPadding(final byte[] message) {
     int originalLength = message.length;
@@ -71,6 +100,11 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
     return paddedMessage;
   }
 
+  /**
+   * Initializes the state for the Keccak-200 sponge construction.
+   *
+   * @return The initialized state as a byte array.
+   */
   @Override
   public byte[] initState() {
     // random 25 bytes
@@ -80,6 +114,12 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
     };
   }
 
+  /**
+   * Absorbs the message into the state.
+   *
+   * @param state The current state of the sponge construction.
+   * @param message The message block to be absorbed.
+   */
   @Override
   public void absorb(final byte[] state, final byte[] message) {
     mixStateAndMessage(state, message);
@@ -91,6 +131,13 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
     return squeeze(message, 0);
   }
 
+  /**
+   * Squeezes the hash value from the state.
+   *
+   * @param message The state from which to squeeze the hash.
+   * @param outputOffsetPosition The offset position for the output.
+   * @return The squeezed hash value.
+   */
   @Override
   public byte[] squeeze(final byte[] message, final int outputOffsetPosition) {
     final byte[] retArr = new byte[BYTES_IN_r];
@@ -101,8 +148,12 @@ public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
   }
 
   /**
-   * mixing the message block with the current state. this methods xors first 168 bits of the state
-   * with first 168 bits of the message. 168 bits because that is the length of r of the message.
+   * Performs the exclusive OR (XOR) operation between the state and the message. Mixing the message
+   * block with the current state. This method xors first 168 bits of the state with first 168 bits
+   * of the message. 168 bits because that is the length of r of the message.
+   *
+   * @param state The current state of the sponge construction.
+   * @param message The message block to be mixed with the state.
    */
   private static void mixStateAndMessage(byte[] state, byte[] message) {
     for (int i = 0; i < message.length; i++) {

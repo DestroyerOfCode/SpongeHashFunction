@@ -8,7 +8,7 @@ version = "1.0"
 repositories {
     mavenCentral()
 }
-val testArtifacts by configurations.creating
+val testArtifacts: Configuration by configurations.creating
 
 tasks.register<Jar>("testJar") {
     archiveClassifier.set("tests")

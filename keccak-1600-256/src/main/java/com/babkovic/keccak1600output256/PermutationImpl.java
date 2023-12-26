@@ -13,6 +13,12 @@ import com.babkovic.api.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation<long[]> {
 
+  /**
+   * Performs the permutation phase of the Keccak algorithm. It repeatedly applies the
+   * transformation rounds on the state.
+   *
+   * @param state The state array that is transformed through the permutation rounds.
+   */
   @Override
   public void permute(final long[] state) {
     for (int i = 0; i < ROUNDS; i++) {
@@ -23,6 +29,12 @@ public class PermutationImpl implements SpongePermutation<long[]> {
     }
   }
 
+  /**
+   * The theta step of the Keccak permutation phase. It XORs each bit in a lane with the parity of
+   * two other lanes in its column.
+   *
+   * @param state The state array on which the theta step is performed.
+   */
   @Override
   public void theta(final long[] state) {
     final long[] bc = new long[KECCAK_LANE];
@@ -39,6 +51,12 @@ public class PermutationImpl implements SpongePermutation<long[]> {
     }
   }
 
+  /**
+   * The rho and pi steps of the Keccak permutation combined. It rotates the bits of each lane, then
+   * permutes the lanes.
+   *
+   * @param state The state array on which the rho and pi steps are performed.
+   */
   @Override
   public void rhoPi(final long[] state) {
     long temp = state[1];
@@ -51,6 +69,11 @@ public class PermutationImpl implements SpongePermutation<long[]> {
     }
   }
 
+  /**
+   * The chi step of the Keccak permutation phase. It combines bits from each column of a lane.
+   *
+   * @param state The state array on which the chi step is performed.
+   */
   @Override
   public void chi(final long[] state) {
     final long[] bc = new long[KECCAK_LANE];
@@ -64,6 +87,13 @@ public class PermutationImpl implements SpongePermutation<long[]> {
     }
   }
 
+  /**
+   * The iota step of the Keccak permutation phase. It modifies the state based on the round
+   * constant.
+   *
+   * @param state The state array on which the iota step is performed.
+   * @param round The round number, which determines the round constant used.
+   */
   @Override
   public void iota(final long[] state, final int round) {
     state[0] ^= KECCAK_1600_ROUND_CONSTANTS[round];

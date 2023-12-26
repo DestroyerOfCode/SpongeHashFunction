@@ -11,8 +11,18 @@ import static com.babkovic.keccak200output168.Constants.ROUNDS;
 
 import com.babkovic.api.SpongePermutation;
 
+/**
+ * Implements the SpongePermutation interface specifically for Keccak-200, applying the permutation
+ * steps theta, rhoPi, chi, and iota to the given state.
+ */
 public class PermutationImpl implements SpongePermutation<byte[]> {
 
+  /**
+   * Applies the full permutation cycle to the state. The cycle includes the steps theta, rhoPi,
+   * chi, and iota, repeated for a specified number of rounds.
+   *
+   * @param state The state array to be permuted.
+   */
   @Override
   public void permute(final byte[] state) {
     for (int i = 0; i < ROUNDS; i++) {
@@ -23,6 +33,12 @@ public class PermutationImpl implements SpongePermutation<byte[]> {
     }
   }
 
+  /**
+   * The theta step of the Keccak permutation. It XORs each bit of the state with the parity of two
+   * columns in the state array.
+   *
+   * @param state The current state of the Keccak sponge.
+   */
   @Override
   public void theta(final byte[] state) {
     final byte[] c = new byte[KECCAK_LANE];
@@ -39,6 +55,11 @@ public class PermutationImpl implements SpongePermutation<byte[]> {
     }
   }
 
+  /**
+   * The rhoPi step of the Keccak permutation. It rotates and rearranges the lanes of the state.
+   *
+   * @param state The current state of the Keccak sponge.
+   */
   @Override
   public void rhoPi(final byte[] state) {
     byte temp = state[1];
@@ -51,6 +72,12 @@ public class PermutationImpl implements SpongePermutation<byte[]> {
     }
   }
 
+  /**
+   * The chi step of the Keccak permutation. It combines bits from each row of the state using a
+   * non-linear function.
+   *
+   * @param state The current state of the Keccak sponge.
+   */
   @Override
   public void chi(final byte[] state) {
     final byte[] c = new byte[KECCAK_LANE];
@@ -64,6 +91,12 @@ public class PermutationImpl implements SpongePermutation<byte[]> {
     }
   }
 
+  /**
+   * The iota step of the Keccak permutation. It modifies the state with a round constant.
+   *
+   * @param state The current state of the Keccak sponge.
+   * @param round The current round number, used to determine the round constant.
+   */
   @Override
   public void iota(final byte[] state, final int round) {
     state[0] ^= KECCAK_200_ROUND_CONSTANTS[round];
