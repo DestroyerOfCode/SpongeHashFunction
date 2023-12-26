@@ -3,6 +3,7 @@ package com.babkovic.keccak1600output256;
 import static com.babkovic.TestUtils.byteArrayToLongArray;
 import static com.babkovic.TestUtils.calculateNumberOfAbsorbIterations;
 import static com.babkovic.TestUtils.hashAndAssertOutputSize;
+import static com.babkovic.TestUtils.longArrayToByteArray;
 import static com.babkovic.TestUtils.toByteArray;
 import static com.babkovic.TestUtils.verifyArraysAreEqual;
 import static com.babkovic.common.Constants.BITS_IN_LONG;
@@ -132,12 +133,13 @@ class SpongeHash1600Output256ImplTest {
   }
 
   @Nested
-  class ArrayHash {
+  class Hash {
 
+    @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing a small message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithSmallMessage() {
+    void shouldNotThrowException_WhenCallingHashWithSmallMessage() throws IOException {
       // given
       // 16 elements, just 1 before the max. 16 = r/bits_in_long - 1
       final long[] message = {
@@ -159,22 +161,29 @@ class SpongeHash1600Output256ImplTest {
         0x7A74B517635724BDL
       };
       final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r);
+          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r) * 2;
+      try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+        // when
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(message);
 
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
+    @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing with message length as multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf1088() {
+    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf1088()
+        throws IOException {
       // given
       // 17 elements, because 17 Longs fit to 1088 bits
       final long[] message = {
@@ -197,22 +206,30 @@ class SpongeHash1600Output256ImplTest {
         0x30E2B50BB8D9C599L
       };
       final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r);
+          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r) * 2;
+      try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+        // when
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
 
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
+    @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing with message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf1088() {
+    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf1088()
+        throws IOException {
       // given
       // 18
       final long[] message = {
@@ -236,22 +253,27 @@ class SpongeHash1600Output256ImplTest {
         0x30E2B50BB8D9C532L
       };
       final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r);
+          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r) * 2;
+      try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(message);
-
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // when
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing a message with 40 longs: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingMessageHashWith40Longs() {
+    void shouldNotThrowException_WhenCallingMessageHashWith40Longs() throws IOException {
       // given
       // 40
       final long[] message = {
@@ -297,64 +319,77 @@ class SpongeHash1600Output256ImplTest {
         0x30E2B50BB8D9C532L
       };
       final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r);
+          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r) * 2;
+      try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+        // when
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
 
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
+    @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing a very large message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() {
+    void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() throws IOException {
       // given
-      final int arraySize = 102_393;
+      final int arraySize = 10_239;
       final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(arraySize * BYTES_IN_LONG, r);
+          calculateNumberOfAbsorbIterations(arraySize * BYTES_IN_LONG, r) * 2;
       final long[] message = new long[arraySize];
+      try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(message);
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(message);
+        final long[] hashedArrayMessage =
+            spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
 
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
-  }
-
-  @Nested
-  class StreamHash {
 
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
     @DisplayName(
         "Hashing a small byte stream not a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingWithSmallNumberNotAMultipleOf8Bytes() {
+    void shouldNotThrowException_WhenHashingWithSmallNumberNotAMultipleOf8Bytes()
+        throws IOException {
       // given
       final byte[] message = {33, -127, 10, 33, -127, 10, 33}; // 7
-      final InputStream is = new ByteArrayInputStream(message);
-      final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        final int absorbIterationsCount =
+            calculateNumberOfAbsorbIterations(message.length * BYTES_IN_LONG, r) * 2;
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
@@ -362,22 +397,25 @@ class SpongeHash1600Output256ImplTest {
     @Test
     @DisplayName(
         "Hashing a small byte stream with a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes() {
+    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes() throws IOException {
       // given
       final byte[] message = {33, -127, 10, 33, -127, 10, 33, 11}; // 8
-      final InputStream is = new ByteArrayInputStream(message);
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
@@ -385,22 +423,25 @@ class SpongeHash1600Output256ImplTest {
     @Test
     @DisplayName(
         "Hashing another small byte stream with a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes2() {
+    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes2() throws IOException {
       // given
       final byte[] message = {33, -127, 10, 33, -127, 10, 33, 13}; // 8
-      final InputStream is = new ByteArrayInputStream(message);
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
@@ -408,7 +449,8 @@ class SpongeHash1600Output256ImplTest {
     @Test
     @DisplayName(
         "Hashing with stream message length of multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfMultipleOf1088() {
+    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfMultipleOf1088()
+        throws IOException {
       // given
       // 136 bytes = 17 longs = 1 message block size
       final byte[] message = {
@@ -422,19 +464,21 @@ class SpongeHash1600Output256ImplTest {
         33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33,
         33, -127, 10, 33, -127, 10, 33, -127
       };
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
-      final InputStream is = new ByteArrayInputStream(message);
+      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
+      try (final InputStream is = new ByteArrayInputStream(message)) {
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
@@ -442,7 +486,8 @@ class SpongeHash1600Output256ImplTest {
     @Test
     @DisplayName(
         "Hashing with stream message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf1088() {
+    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf1088()
+        throws IOException {
       // given
       // 137
       final byte[] message = {
@@ -456,19 +501,21 @@ class SpongeHash1600Output256ImplTest {
         33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33,
         33, -127, 10, 33, -127, 10, 33, -127, 10
       };
-      final InputStream is = new ByteArrayInputStream(message);
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
+        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
@@ -476,7 +523,8 @@ class SpongeHash1600Output256ImplTest {
     @Test
     @DisplayName(
         "Hashing another stream message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf10882() {
+    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf10882()
+        throws IOException {
       // given
       // 137
       final byte[] message = {
@@ -490,42 +538,50 @@ class SpongeHash1600Output256ImplTest {
         33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33,
         33, -127, 10, 33, -127, 10, 33, -127, 11
       };
-      final InputStream is = new ByteArrayInputStream(message);
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
+        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
-      // when
-      final long[] resStream = spongeHashKeccak1600.hash(is, message.length);
-      final long[] resArray = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
+    @Tag("arrayVersion")
     @Test
     @DisplayName("Hashing a long stream message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() {
+    void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() throws IOException {
       // given
-      final int arraySize = 104_812;
+      final int arraySize = 10_412;
       final byte[] message = new byte[arraySize];
-      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
-      final InputStream is = new ByteArrayInputStream(message);
+      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
-      // when
-      final long[] hashedMessage = spongeHashKeccak1600.hash(is, message.length);
+      try (final InputStream is = new ByteArrayInputStream(message)) {
 
-      // then
-      assertAll(
-          hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+        // when
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, message.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(byteArrayToLongArray(message));
+
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
 
     @Tag("streamVersion")
+    @Tag("arrayVersion")
     @Tag("performanceHeavy")
     @Test
     @DisplayName("Hashing a stream of video message: should not throw any exceptions")
@@ -536,79 +592,85 @@ class SpongeHash1600Output256ImplTest {
           final InputStream is1 = new FileInputStream(filePath)) {
         final Path path = Paths.get(filePath);
         final int fileSize = (int) Files.size(path);
-        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(fileSize, r);
+        final int absorbIterationsCount = calculateNumberOfAbsorbIterations(fileSize, r) * 2;
         final byte[] byteArrayStream = toByteArray(is1, is1.available());
         final long[] longArrayStream = byteArrayToLongArray(byteArrayStream);
 
         // when
-        final long[] resStream = spongeHashKeccak1600.hash(is, fileSize);
-        final long[] resArray = spongeHashKeccak1600.hash(longArrayStream);
+        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(is, fileSize);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(longArrayStream);
 
         // then
         assertAll(
-            verifyArraysAreEqual(resStream, resArray),
-            () ->
-                verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
       }
     }
-  }
 
-  @Nested
-  @DisplayName("When trying to hash a string")
-  class StringHashing {
-    @Test
-    @DisplayName("Hashing a small string with Stream and Array: Should not throw any exceptions")
-    void hashingSmallStringWithStreamShouldNotThrowAnyExceptions() {
-      // given
-      final String stringToHash = "Hello ";
-      final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(
-              stringToHash.getBytes(StandardCharsets.UTF_8).length, r);
+    @Nested
+    @DisplayName("When trying to hash a string")
+    class StringHashing {
+      @Test
+      @Tag("stringVersion")
+      @DisplayName("Hashing a small string with Stream and Array: Should not throw any exceptions")
+      void hashingSmallStringWithStreamShouldNotThrowAnyExceptions() {
+        // given
+        final String stringToHash = "Hello ";
+        final int absorbIterationsCount =
+            calculateNumberOfAbsorbIterations(
+                    stringToHash.getBytes(StandardCharsets.UTF_8).length, r)
+                * 2;
 
-      // when
-      final long[] resStream =
-          spongeHashKeccak1600.hash(
-              new ByteArrayInputStream(stringToHash.getBytes(StandardCharsets.UTF_8)),
-              stringToHash.getBytes().length);
-      final long[] resArray =
-          spongeHashKeccak1600.hash(
-              byteArrayToLongArray(stringToHash.getBytes(StandardCharsets.UTF_8)));
+        // when
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(
+                new ByteArrayInputStream(stringToHash.getBytes(StandardCharsets.UTF_8)),
+                stringToHash.getBytes().length);
+        final long[] hashedArrayMessage =
+            spongeHashKeccak1600.hash(
+                byteArrayToLongArray(stringToHash.getBytes(StandardCharsets.UTF_8)));
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
-    }
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
 
-    @Test
-    @DisplayName("Hashing a large string with Stream and Array: Should not throw any exceptions")
-    void hashingLargeStringWithStreamShouldNotThrowAnyExceptions() {
-      // given
-      final String stringToHash =
-          "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello"
-              + "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello"
-              + "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello";
+      @Test
+      @Tag("stringVersion")
+      @DisplayName("Hashing a large string with Stream and Array: Should not throw any exceptions")
+      void hashingLargeStringWithStreamShouldNotThrowAnyExceptions() {
+        // given
+        final String stringToHash =
+            "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello"
+                + "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello"
+                + "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello";
 
-      final byte[] stringByteArray = stringToHash.getBytes(StandardCharsets.UTF_8);
-      final long[] stringLongArray = byteArrayToLongArray(stringByteArray);
-      final int absorbIterationsCount =
-          calculateNumberOfAbsorbIterations(stringByteArray.length, r);
+        final byte[] stringByteArray = stringToHash.getBytes(StandardCharsets.UTF_8);
+        final long[] stringLongArray = byteArrayToLongArray(stringByteArray);
+        final int absorbIterationsCount =
+            calculateNumberOfAbsorbIterations(stringByteArray.length, r) * 2;
 
-      // when
-      final long[] resStream =
-          spongeHashKeccak1600.hash(
-              new ByteArrayInputStream(stringByteArray), stringByteArray.length);
-      final long[] resArray = spongeHashKeccak1600.hash(stringLongArray);
+        // when
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(
+                new ByteArrayInputStream(stringByteArray), stringByteArray.length);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(stringLongArray);
 
-      // then
-      assertAll(
-          verifyArraysAreEqual(resStream, resArray),
-          hashAndAssertOutputSize(resStream, OUTPUT_LENGTH_LONGS),
-          () -> verify(spongeHashKeccak1600, times(absorbIterationsCount * 2)).absorb(any(), any()),
-          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        // then
+        assertAll(
+            verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
+            hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_LONGS),
+            hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_LONGS),
+            () -> verify(spongeHashKeccak1600, times(absorbIterationsCount)).absorb(any(), any()),
+            () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      }
     }
   }
 

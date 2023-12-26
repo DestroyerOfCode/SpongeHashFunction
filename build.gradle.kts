@@ -43,7 +43,6 @@ dependencies {
     testImplementation(libs.junit.jupiter)
 }
 
-
 tasks.test {
     useJUnitPlatform {
         excludeTags("performanceHeavy")

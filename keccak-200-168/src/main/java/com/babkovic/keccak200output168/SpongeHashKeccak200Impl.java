@@ -47,7 +47,7 @@ public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
       // from the original message copy 168 bits to the message block
       for (int i = 0; messageSizeBytes > i; i += BYTES_IN_r) {
         byte[] messageBlock = new byte[BYTES_IN_r];
-        int readBytes = message.readNBytes(messageBlock, 0, BYTES_IN_r);
+        final int readBytes = message.readNBytes(messageBlock, 0, BYTES_IN_r);
 
         if (readBytes < BYTES_IN_r) {
           messageBlock = applyPadding(messageBlock);

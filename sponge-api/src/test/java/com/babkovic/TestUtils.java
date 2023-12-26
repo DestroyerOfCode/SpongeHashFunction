@@ -74,4 +74,15 @@ public class TestUtils {
     buffer.asLongBuffer().get(outBytes);
     return outBytes;
   }
+
+  public static byte[] longArrayToByteArray(final long[] longs) {
+
+    final ByteBuffer buffer = ByteBuffer.allocate(longs.length * BYTES_IN_LONG);
+
+    for (long l : longs) {
+      buffer.putLong(l);
+    }
+
+    return buffer.array();
+  }
 }

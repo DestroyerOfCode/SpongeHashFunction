@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -56,51 +57,55 @@ public class SpongeHash200output168ImplTest {
     spongeHashKeccak200 = null;
   }
 
-  @Test
-  @DisplayName("Apply padding without multiple of 'r': should correctly pad the message")
-  void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr() {
-    // given
-    byte[] message = new byte[BYTES_IN_r + 1];
-    message[0] = 1;
+  @Nested
+  @DisplayName("Methods testing the applyPadding method")
+  class TestPadding {
+    @Test
+    @DisplayName("Apply padding without multiple of 'r': should correctly pad the message")
+    void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr() {
+      // given
+      byte[] message = new byte[BYTES_IN_r + 1];
+      message[0] = 1;
 
-    // when
-    final byte[] retMessage = spongeHashKeccak200.applyPadding(message);
+      // when
+      final byte[] retMessage = spongeHashKeccak200.applyPadding(message);
 
-    // then
-    assertAll(
-        () -> {
-          for (int i = 0; i < message.length; i++) {
-            assertEquals(retMessage[i], message[i]);
-          }
-        },
-        () -> {
-          for (int i = message.length; i < retMessage.length; i++) {
-            assertEquals(retMessage[i], 0);
-          }
-        });
-  }
+      // then
+      assertAll(
+          () -> {
+            for (int i = 0; i < message.length; i++) {
+              assertEquals(retMessage[i], message[i]);
+            }
+          },
+          () -> {
+            for (int i = message.length; i < retMessage.length; i++) {
+              assertEquals(retMessage[i], 0);
+            }
+          });
+    }
 
-  @Test
-  @DisplayName("Apply padding with a small message: should return a correctly padded message")
-  void shouldReturnPaddedMessage_WhenApplyPaddingWithSmallMessage() {
-    // given
-    final byte[] message = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+    @Test
+    @DisplayName("Apply padding with a small message: should return a correctly padded message")
+    void shouldReturnPaddedMessage_WhenApplyPaddingWithSmallMessage() {
+      // given
+      final byte[] message = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 
-    // when
-    final byte[] retMessage = spongeHashKeccak200.applyPadding(message);
+      // when
+      final byte[] retMessage = spongeHashKeccak200.applyPadding(message);
 
-    // then
-    assertAll(
-        () -> {
-          for (int i = 0; i < message.length; i++) {
-            assertEquals(retMessage[i], message[i]);
-          }
-        },
-        () -> {
-          for (int i = message.length; i < retMessage.length; i++) {
-            assertEquals(retMessage[i], 0);
-          }
-        });
+      // then
+      assertAll(
+          () -> {
+            for (int i = 0; i < message.length; i++) {
+              assertEquals(retMessage[i], message[i]);
+            }
+          },
+          () -> {
+            for (int i = message.length; i < retMessage.length; i++) {
+              assertEquals(retMessage[i], 0);
+            }
+          });
+    }
   }
 
   @Tag("arrayVersion")
@@ -142,28 +147,36 @@ public class SpongeHash200output168ImplTest {
   }
 
   @Tag("arrayVersion")
+  @Tag("streamVersion")
   @Test
   @DisplayName(
       "Hashing an array message of length multiple of 168: should complete without exceptions")
-  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf168() {
+  void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf168()
+      throws IOException {
     // given
     final byte[] message = {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       127
     };
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
+    try (final InputStream is = new ByteArrayInputStream(message)) {
 
-    // when
-    final byte[] hashedMessage = spongeHashKeccak200.hash(message);
+      // when
+      final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+      final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
 
-    // then
-    assertAll(
-        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+      // then
+      assertAll(
+          verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
+          hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+          hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+          () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+    }
   }
 
   @Tag("arrayVersion")
+  @Tag("streamVersion")
   @Test
   @DisplayName(
       "Hashing an array message of length not multiple of 168: should complete without exceptions")
@@ -173,57 +186,67 @@ public class SpongeHash200output168ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       127, 3
     };
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
 
     // when
-    final byte[] hashedMessage = spongeHashKeccak200.hash(message);
-
-    // then
-    assertAll(
-        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
-  }
-
-  @Tag("arrayVersion")
-  @Test
-  @DisplayName("Hashing a very large message array: should complete without exceptions")
-  void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() {
-    // given
-    final byte[] message = new byte[102_393];
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
-
-    // when
-    final byte[] hashedMessage = spongeHashKeccak200.hash(message);
-
-    // then
-    assertAll(
-        hashAndAssertOutputSize(hashedMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
-  }
-
-  @Tag("streamVersion")
-  @Tag("arrayVersion")
-  @Test
-  @DisplayName("Hashing a small message stream: should yield consistent results with array version")
-  void shouldNotThrowException_WhenCallingHashWithStreamSmallMessage() {
-    // given
-    final byte[] message = {33, -127, 10, 33, -127, 10, 33, -127};
-    final InputStream is = new ByteArrayInputStream(message);
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
-
-    // when
-    final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+    final byte[] hashedStreamMessage = spongeHashKeccak200.hash(message);
     final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
 
     // then
     assertAll(
         verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
         hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
-        hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+  }
+
+  @Tag("arrayVersion")
+  @Tag("streamVersion")
+  @Test
+  @DisplayName("Hashing a very large message array: should complete without exceptions")
+  void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() throws IOException {
+    // given
+    final byte[] message = new byte[10_393];
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
+    try (final InputStream is = new ByteArrayInputStream(message)) {
+
+      // when
+      final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+      final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
+
+      // then
+      assertAll(
+          verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
+          hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+          hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+          () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+    }
+  }
+
+  @Tag("streamVersion")
+  @Tag("arrayVersion")
+  @Test
+  @DisplayName("Hashing a small message stream: should yield consistent results with array version")
+  void shouldNotThrowException_WhenCallingHashWithStreamSmallMessage() throws IOException {
+    // given
+    final byte[] message = {33, -127, 10, 33, -127, 10, 33, -127};
+    try (final InputStream is = new ByteArrayInputStream(message)) {
+      final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
+
+      // when
+      final byte[] hashedStreamMessage = spongeHashKeccak200.hash(is, message.length);
+      final byte[] hashedArrayMessage = spongeHashKeccak200.hash(message);
+
+      // then
+      assertAll(
+          verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
+          hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
+          hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
+          () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+          () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
+    }
   }
 
   @Tag("streamVersion")
@@ -236,7 +259,7 @@ public class SpongeHash200output168ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       127
     };
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
@@ -248,11 +271,12 @@ public class SpongeHash200output168ImplTest {
         verifyArraysAreEqual(hashedArrayMessage, hashedStreamMessage),
         hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
         hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
 
   @Tag("streamVersion")
+  @Tag("arrayVersion")
   @Test
   @DisplayName(
       "Hashing a stream message of length not multiple of 168: should yield consistent results")
@@ -263,7 +287,7 @@ public class SpongeHash200output168ImplTest {
       33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127, 10, 33, -127,
       127, 3
     };
-    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r);
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
@@ -275,19 +299,18 @@ public class SpongeHash200output168ImplTest {
         verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
         hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
         hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
 
   @Tag("streamVersion")
+  @Tag("arrayVersion")
   @Test
   @DisplayName("Hashing a long message stream: should complete without exceptions")
   void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() {
     // given
     final byte[] message = new byte[10_481];
-    final int absorbIterationsCount =
-        calculateNumberOfAbsorbIterations(
-            message.length, r); // how many times will absorb phase iterate through message
+    final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
     final InputStream is = new ByteArrayInputStream(message);
 
     // when
@@ -299,11 +322,12 @@ public class SpongeHash200output168ImplTest {
         verifyArraysAreEqual(hashedStreamMessage, hashedArrayMessage),
         hashAndAssertOutputSize(hashedStreamMessage, OUTPUT_LENGTH_BYTES),
         hashAndAssertOutputSize(hashedArrayMessage, OUTPUT_LENGTH_BYTES),
-        () -> verify(spongeHashKeccak200, times(absorbIterationsCount * 2)).absorb(any(), any()),
-        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount * 2));
+        () -> verify(spongeHashKeccak200, times(absorbIterationsCount)).absorb(any(), any()),
+        () -> verifyPermFuncsGetCalledNTimesRoundTimes(absorbIterationsCount));
   }
 
   @Tag("streamVersion")
+  @Tag("fileVersion")
   @Tag("performanceHeavy")
   @Test
   @DisplayName("Hashing a video file stream: should complete without exceptions")
