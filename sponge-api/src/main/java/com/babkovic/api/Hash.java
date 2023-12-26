@@ -3,8 +3,8 @@ package com.babkovic.api;
 import java.io.InputStream;
 
 /**
- * Interface defining the basic operations of a hash function.
- * Provides methods to compute a hash from a message or a stream of data.
+ * Interface defining the basic operations of a hash function. Provides methods to compute a hash
+ * from a message or a stream of data.
  */
 public interface Hash<T> {
   /**

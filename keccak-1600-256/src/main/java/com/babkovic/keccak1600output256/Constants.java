@@ -21,6 +21,9 @@ public class Constants {
   // the bus (1600 bits)
   public static final int b = (int) ((KECCAK_LANE * KECCAK_LANE) * Math.pow(2, l)); // 1600 bits
   public static final int r = 1088; // in bits. it is b - c
+  public static final int BYTES_IN_r = r / BITS_IN_BYTE;
+  public static final int LONGS_IN_r = BYTES_IN_r / BITS_IN_BYTE;
+
   // capacity
   public static final int c = b - r; // 512 bits
   public static final int STATE_LONG_LENGTH = b / BITS_IN_LONG; // 25 Longs

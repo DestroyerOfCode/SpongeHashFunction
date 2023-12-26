@@ -1,9 +1,10 @@
 package com.babkovic.keccak1600output256;
 
 import static com.babkovic.common.Constants.BITS_IN_BYTE;
-import static com.babkovic.common.Constants.BITS_IN_LONG;
 import static com.babkovic.common.Utils.nearestGreaterMultiple;
-import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_BITS;
+import static com.babkovic.keccak1600output256.Constants.BYTES_IN_r;
+import static com.babkovic.keccak1600output256.Constants.LONGS_IN_r;
+import static com.babkovic.keccak1600output256.Constants.OUTPUT_LENGTH_LONGS;
 import static com.babkovic.keccak1600output256.Constants.r;
 
 import com.babkovic.api.SpongeHash;
@@ -45,15 +46,15 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
     and if r=1088, it allocated 18 Longs
     */
     final long[] state = initState();
-    final long[] messageBlock = new long[r / BITS_IN_LONG];
+    final long[] messageBlock = new long[LONGS_IN_r];
 
     message = applyPadding(message);
 
     try {
-      for (int i = 0; i < message.length; i += r / BITS_IN_LONG) {
+      for (int i = 0; i < message.length; i += LONGS_IN_r) {
         // message block is the 1088 bits (17 Longs)
         // from the original message copy 1088 bits to the message block
-        System.arraycopy(message, i, messageBlock, 0, r / BITS_IN_LONG);
+        System.arraycopy(message, i, messageBlock, 0, LONGS_IN_r);
         absorb(state, messageBlock);
       }
 
@@ -77,24 +78,24 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
     and if r=1088, it allocated 18 Longs
     */
     final long[] state = initState(); // 25 Longs, 200 Bytes, 1600 Bits
-    long[] messageBlock = new long[r / BITS_IN_LONG]; // 17 Longs, 136 Bytes, 1088 Bits
+    long[] messageBlock = new long[LONGS_IN_r]; // 17 Longs, 136 Bytes, 1088 Bits
     final DataInputStream message = new DataInputStream(messageStream);
+    final int bytesToRead = Math.min(BYTES_IN_r, messageSizeBytes);
 
     try {
       // message block is the 1088 bits (17 bytes)
       // from the original message copy 1088 bits to the message block
-      for (int i = 0; messageSizeBytes > i; i += r / BITS_IN_BYTE) {
+      for (int i = 0; messageSizeBytes > i; i += BYTES_IN_r) {
 
-        final int bytesToRead = Math.min(r / BITS_IN_BYTE, messageSizeBytes);
         byte[] bytesRead = new byte[bytesToRead];
         int read = message.read(bytesRead);
 
-        if (read < r / BITS_IN_BYTE) {
+        if (read < BYTES_IN_r) {
           bytesRead = applyPadding(bytesRead);
         }
 
         final ByteBuffer buffer = ByteBuffer.wrap(bytesRead);
-        for (int j = 0; j < r / BITS_IN_LONG; j++) {
+        for (int j = 0; j < LONGS_IN_r; j++) {
           messageBlock[j] = buffer.getLong();
         }
 
@@ -117,7 +118,7 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
   @Override
   public long[] applyPadding(final long[] message) {
     int originalLength = message.length;
-    int paddedLength = nearestGreaterMultiple(originalLength, r / BITS_IN_LONG); // 17
+    int paddedLength = nearestGreaterMultiple(originalLength, LONGS_IN_r); // 17
 
     final long[] paddedMessage = new long[paddedLength];
     System.arraycopy(message, 0, paddedMessage, 0, originalLength);
@@ -169,7 +170,8 @@ public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
 
   @Override
   public long[] squeeze(final long[] message, final int outputOffsetPosition) {
-    final long[] retArr = new long[OUTPUT_LENGTH_BITS / BITS_IN_LONG];
+    final long[] retArr = new long[OUTPUT_LENGTH_LONGS];
+
     // use the first r bits to squeeze out the output
     System.arraycopy(message, 0, retArr, outputOffsetPosition, retArr.length);
 

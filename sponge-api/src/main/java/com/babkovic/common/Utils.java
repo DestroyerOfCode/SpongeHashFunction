@@ -44,5 +44,5 @@ public class Utils {
     return multiple;
   }
 
-  public static byte[] MOD_5 = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+  public static final byte[] MOD_5 = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
 }
