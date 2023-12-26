@@ -9,11 +9,11 @@ import com.babkovic.exception.SpongeException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class SpongeHashKeccak200Impl implements SpongeHash<byte[]> {
+public class SpongeHashKeccak200Output168Impl implements SpongeHash<byte[]> {
 
   private final SpongePermutation<byte[]> spongePermutation;
 
-  public SpongeHashKeccak200Impl(final SpongePermutation<byte[]> spongePermutation) {
+  public SpongeHashKeccak200Output168Impl(final SpongePermutation<byte[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 

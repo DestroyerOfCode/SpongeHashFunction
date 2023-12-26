@@ -40,7 +40,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 
-class SpongeHash1600Output256ImplTest {
+public class SpongeHash1600Output256ImplTest {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(SpongeHash1600Output256ImplTest.class);
@@ -52,7 +52,7 @@ class SpongeHash1600Output256ImplTest {
   void setUp(final TestInfo testInfo) {
     LOGGER.info(() -> String.format("Starting test: %s", testInfo.getDisplayName()));
     spongePermutationImpl = spy(new PermutationImpl());
-    spongeHashKeccak1600 = spy(new SpongeHashKeccak1600Impl(spongePermutationImpl));
+    spongeHashKeccak1600 = spy(new SpongeHashKeccak1600Output256Impl(spongePermutationImpl));
   }
 
   @AfterEach
@@ -63,11 +63,11 @@ class SpongeHash1600Output256ImplTest {
   }
 
   @Nested
-  @DisplayName("Methods testing the applyPadding method")
-  class TestPadding {
+  @DisplayName("Padding Behavior Tests")
+  class PaddingBehaviorTests {
     @Test
-    @DisplayName("Padding with multiple of 'r': should return the original message unchanged")
-    void shouldReturnOriginalMessage_WhenApplyPaddingWithMultipleOfr() {
+    @DisplayName("Should retain original message when padding multiple of rate 'r'")
+    void testOriginalMessageRetainedWhenPaddingMultipleOfRate() {
       // given
       final long[] message = new long[r * 9];
       message[0] = 1L; // just to check if all bytes are not set to null
@@ -80,8 +80,8 @@ class SpongeHash1600Output256ImplTest {
     }
 
     @Test
-    @DisplayName("Padding without multiple of 'r': should return the original message length")
-    void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr() {
+    @DisplayName("Should add padding when padding not multiple of rate 'r'")
+    void testAddPaddingWhenPaddingNotMultipleOfRate() {
       // given
       final long[] message = new long[1024];
       final int paddedMessageLength = nearestGreaterMultiple(message.length, r / BITS_IN_LONG);
@@ -109,8 +109,8 @@ class SpongeHash1600Output256ImplTest {
     }
 
     @Test
-    @DisplayName("Padding with a small message: should return a correctly padded message")
-    void shouldReturnPaddedMessage_WhenApplyPaddingWithSmallMessage() {
+    @DisplayName("Should correctly pad a message shorter than rate 'r'")
+    void testCorrectPaddingForShortMessage() {
       // given
       final long[] message = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
 
@@ -133,13 +133,14 @@ class SpongeHash1600Output256ImplTest {
   }
 
   @Nested
-  class Hash {
+  @DisplayName("Hashing Functionality Tests")
+  class HashingFunctionalityTests {
 
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a small message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithSmallMessage() throws IOException {
+    @DisplayName("Should hash small message arrays without throwing exceptions")
+    void testHashingSmallMessage() throws IOException {
       // given
       // 16 elements, just 1 before the max. 16 = r/bits_in_long - 1
       final long[] message = {
@@ -166,7 +167,8 @@ class SpongeHash1600Output256ImplTest {
 
         // when
         final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
-        final long[] hashedStreamMessage = spongeHashKeccak1600.hash(message);
+        final long[] hashedStreamMessage =
+            spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
 
         // then
         assertHashing(hashedStreamMessage, hashedArrayMessage, absorbIterationsCount);
@@ -176,11 +178,10 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing with message length as multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf1088()
-        throws IOException {
+    @DisplayName("Should hash message arrays with length multiple of 1088 without exceptions")
+    void testHashingMessageArraysWithMultipleOf1088Length() throws IOException {
       // given
-      // 17 elements, because 17 Longs fit to 1088 bits
+      // 17 elements, because exactly 17 longs fit to 1088 bits
       final long[] message = {
         0x7FFFFFFFFFFFFFFFL,
         0x11F44BFB1BBCD580L,
@@ -217,9 +218,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing with message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf1088()
-        throws IOException {
+    @DisplayName("Should hash message with length not multiple of 1088 without exceptions")
+    void testHashingMessageWithNonMultipleOf1088Length() throws IOException {
       // given
       // 18
       final long[] message = {
@@ -250,15 +250,17 @@ class SpongeHash1600Output256ImplTest {
         final long[] hashedStreamMessage =
             spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
         final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
+
         // then
         assertHashing(hashedStreamMessage, hashedArrayMessage, absorbIterationsCount);
       }
     }
 
+    @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a message with 40 longs: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingMessageHashWith40Longs() throws IOException {
+    @DisplayName("Should hash message arrays with 40 longs without throwing exceptions")
+    void testHashingLongMessageArraysWith40Longs() throws IOException {
       // given
       // 40
       final long[] message = {
@@ -308,9 +310,9 @@ class SpongeHash1600Output256ImplTest {
       try (final InputStream is = new ByteArrayInputStream(longArrayToByteArray(message))) {
 
         // when
-        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
         final long[] hashedStreamMessage =
             spongeHashKeccak1600.hash(is, message.length * BYTES_IN_LONG);
+        final long[] hashedArrayMessage = spongeHashKeccak1600.hash(message);
 
         // then
         assertHashing(hashedStreamMessage, hashedArrayMessage, absorbIterationsCount);
@@ -320,8 +322,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a very large message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() throws IOException {
+    @DisplayName("Should hash very large message arrays without throwing exceptions")
+    void testHashingVeryLargeMessageArrays() throws IOException {
       // given
       final int arraySize = 10_239;
       final int absorbIterationsCount =
@@ -342,12 +344,11 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing a small byte stream not a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingWithSmallNumberNotAMultipleOf8Bytes()
-        throws IOException {
+    @DisplayName("Should hash small non-8-byte-aligned streams without throwing exceptions")
+    void testHashingSmallNon8ByteAlignedStreams() throws IOException {
       // given
-      final byte[] message = {33, -127, 10, 33, -127, 10, 33}; // 7
+      // 7
+      final byte[] message = {33, -127, 10, 33, -127, 10, 33};
       try (final InputStream is = new ByteArrayInputStream(message)) {
 
         final int absorbIterationsCount =
@@ -365,11 +366,11 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing a small byte stream with a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes() throws IOException {
+    @DisplayName("Should hash small 8-byte-aligned streams without throwing exceptions - 1")
+    void testHashingSmall8ByteAlignedStreams_1() throws IOException {
       // given
-      final byte[] message = {33, -127, 10, 33, -127, 10, 33, 11}; // 8
+      // 8
+      final byte[] message = {33, -127, 10, 33, -127, 10, 33, 11};
       try (final InputStream is = new ByteArrayInputStream(message)) {
 
         final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
@@ -386,9 +387,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing another small byte stream with a multiple of 8 bytes: should not throw exceptions")
-    void shouldNotThrowException_WhenHashingSmallNumberWithAMultipleOf8Bytes2() throws IOException {
+    @DisplayName("Should hash small 8-byte-aligned streams without throwing exceptions - 2")
+    void testHashingSmall8ByteAlignedStreams_2() throws IOException {
       // given
       final byte[] message = {33, -127, 10, 33, -127, 10, 33, 13}; // 8
       try (final InputStream is = new ByteArrayInputStream(message)) {
@@ -407,10 +407,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing with stream message length of multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfMultipleOf1088()
-        throws IOException {
+    @DisplayName("Should hash streams with length multiple of 1088 without exceptions")
+    void testHashingStreamsWithMultipleOf1088Length() throws IOException {
       // given
       // 136 bytes = 17 longs = 1 message block size
       final byte[] message = {
@@ -439,10 +437,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing with stream message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf1088()
-        throws IOException {
+    @DisplayName("Should hash streams with length not multiple of 1088 without exceptions - 1")
+    void testHashingStreamsWithNonMultipleOf1088Length_1() throws IOException {
       // given
       // 137
       final byte[] message = {
@@ -471,10 +467,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing another stream message length not a multiple of 1088: should not throw exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf10882()
-        throws IOException {
+    @DisplayName("Should hash streams with length not multiple of 1088 without exceptions - 2")
+    void testHashingStreamsWithNonMultipleOf1088Length_2() throws IOException {
       // given
       // 137
       final byte[] message = {
@@ -503,8 +497,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a long stream message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() throws IOException {
+    @DisplayName("Should hash long streams without throwing exceptions")
+    void testHashingLongStreams() throws IOException {
       // given
       final int arraySize = 10_412;
       final byte[] message = new byte[arraySize];
@@ -525,8 +519,8 @@ class SpongeHash1600Output256ImplTest {
     @Tag("arrayVersion")
     @Tag("performanceHeavy")
     @Test
-    @DisplayName("Hashing a stream of video message: should not throw any exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamVideoMessage() throws IOException {
+    @DisplayName("Should hash video file streams without throwing exceptions")
+    void testHashingVideoFileStreams() throws IOException {
       // given
       final String filePath = "src/test/resources/video.mp4";
       try (final InputStream is = new FileInputStream(filePath);
@@ -547,8 +541,8 @@ class SpongeHash1600Output256ImplTest {
     }
 
     @Nested
-    @DisplayName("When trying to hash a string")
-    class StringHashing {
+    @DisplayName("String Hashing Tests")
+    class StringHashingTests {
       @Test
       @Tag("stringVersion")
       @DisplayName("Hashing a small string with Stream and Array: Should not throw any exceptions")

@@ -51,7 +51,7 @@ public class SpongeHash200output168ImplTest {
   void setUp(final TestInfo testInfo) {
     LOGGER.info(() -> String.format("Starting test: %s", testInfo.getDisplayName()));
     spongePermutationImpl = spy(new PermutationImpl());
-    spongeHashKeccak200 = spy(new SpongeHashKeccak200Impl(spongePermutationImpl));
+    spongeHashKeccak200 = spy(new SpongeHashKeccak200Output168Impl(spongePermutationImpl));
   }
 
   @AfterEach
@@ -65,8 +65,8 @@ public class SpongeHash200output168ImplTest {
   @DisplayName("Methods testing the applyPadding method")
   class TestPadding {
     @Test
-    @DisplayName("Apply padding without multiple of 'r': should correctly pad the message")
-    void shouldReturnOriginalMessage_WhenApplyPaddingWithoutMultipleOfr() {
+    @DisplayName("Ensure padding is added when message size is not a multiple of 'r'")
+    void testPaddingAddedForNonMultipleOfBlockSize() {
       // given
       byte[] message = new byte[BYTES_IN_r + 1];
       message[0] = 1;
@@ -89,8 +89,8 @@ public class SpongeHash200output168ImplTest {
     }
 
     @Test
-    @DisplayName("Apply padding with a small message: should return a correctly padded message")
-    void shouldReturnPaddedMessage_WhenApplyPaddingWithSmallMessage() {
+    @DisplayName("Verify padding preserves original message when size is already a multiple of 'r'")
+    void testPaddingPreservesMessageForBlockSizeMultiple() {
       // given
       // 15 bytes
       final byte[] message = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
@@ -113,8 +113,8 @@ public class SpongeHash200output168ImplTest {
     }
 
     @Test
-    @DisplayName("Apply padding with multiple of 'r': should return the original message unchanged")
-    void shouldReturnOriginalMessage_WhenApplyPaddingWithMultipleOfr() {
+    @DisplayName("Confirm padding behaves for larger messages")
+    void testPaddingCorrectForMultipleOfr() {
       // given
       final byte[] message = new byte[BYTES_IN_r * 9];
       message[0] = 1; // just to check if all bytes are not set to null
@@ -132,12 +132,13 @@ public class SpongeHash200output168ImplTest {
   }
 
   @Nested
-  class Hash {
+  @DisplayName("Hash Functionality Tests")
+  class HashFunctionalityTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a small message array: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithSmallMessage() throws IOException {
+    @DisplayName("Hashing should handle small message arrays without errors")
+    void testHashingSmallMessageArrayWithoutErrors() throws IOException {
       // given
       // 20 bytes
       final byte[] message = {
@@ -158,10 +159,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing an array message of length multiple of 168: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfMultipleOf168()
-        throws IOException {
+    @DisplayName("Hashing should handle messages with size as multiple of r without errors")
+    void testHashingMessageWithSizeMultipleOf168WithoutErrors() throws IOException {
       // given
       // 21 bytes
       final byte[] message = {
@@ -183,10 +182,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing an array message of length not multiple of 168: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithMessageLengthOfNotMultipleOf168()
-        throws IOException {
+    @DisplayName("Hashing should handle messages with size not a multiple of r without errors")
+    void testHashingMessageWithSizeNotMultipleOfrWithoutErrors() throws IOException {
       // given
       // 22 bytes
       final byte[] message = {
@@ -208,8 +205,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a very large message array: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithVeryLargeMessage() throws IOException {
+    @DisplayName("Hashing should process very large message arrays without errors")
+    void testHashingVeryLargeMessageArrayWithoutErrors() throws IOException {
       // given
       final byte[] message = new byte[10_393];
       final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
@@ -227,9 +224,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing a small message stream: should yield consistent results with array version")
-    void shouldNotThrowException_WhenCallingHashWithStreamSmallMessage() throws IOException {
+    @DisplayName("Hashing a small message stream should be consistent with array hashing")
+    void testConsistencyBetweenStreamAndArrayHashingForSmallMessage() throws IOException {
       // given
       // 8 bytes
       final byte[] message = {33, -127, 10, 33, -127, 10, 33, -127};
@@ -248,10 +244,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing a stream message of length multiple of 168: should yield consistent results")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfMultipleOf168()
-        throws IOException {
+    @DisplayName("Hashing a stream with size as multiple of 168 should be consistent")
+    void testConsistencyForStreamWithSizeMultipleOf168() throws IOException {
       // given
       // 21 bytes
       final byte[] message = {
@@ -273,10 +267,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName(
-        "Hashing a stream message of length not multiple of 168: should yield consistent results")
-    void shouldNotThrowException_WhenCallingHashWithStreamMessageLengthOfNotMultipleOf168()
-        throws IOException {
+    @DisplayName("Hashing a stream with size not a multiple of 168 should be consistent")
+    void testConsistencyForStreamWithSizeNotMultipleOf168() throws IOException {
       // given
       // 22 bytes
       final byte[] message = {
@@ -298,8 +290,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("streamVersion")
     @Tag("arrayVersion")
     @Test
-    @DisplayName("Hashing a long message stream: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamLongMessage() throws IOException {
+    @DisplayName("Hashing a long message should not produce errors")
+    void testHashingLongMessageWithoutErrors() throws IOException {
       // given
       final byte[] message = new byte[10_481];
       final int absorbIterationsCount = calculateNumberOfAbsorbIterations(message.length, r) * 2;
@@ -319,8 +311,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("fileVersion")
     @Tag("performanceHeavy")
     @Test
-    @DisplayName("Hashing a video file stream: should complete without exceptions")
-    void shouldNotThrowException_WhenCallingHashWithStreamImageMessage() throws IOException {
+    @DisplayName("Hashing a video file stream should complete without throwing exceptions")
+    void testHashingStreamVideoFileWithoutExceptions() throws IOException {
       // given
       final String filePath = "src/test/resources/video.mp4";
       try (final InputStream is = new FileInputStream(filePath);
@@ -343,8 +335,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("stringVersion")
     @Tag("streamVersion")
     @Tag("arrayVersion")
-    @DisplayName("Hashing string with Stream and Array: Should not throw any exceptions")
-    void hashingSmallStringWithStreamShouldNotThrowAnyExceptions() throws IOException {
+    @DisplayName("Hashing a short text string using both stream and array should match")
+    void testHashingShortTextStringMatchesForStreamAndArray() throws IOException {
       // given
       final String stringToHash = "Hello";
       final byte[] stringByteArray = stringToHash.getBytes(StandardCharsets.UTF_8);
@@ -366,8 +358,8 @@ public class SpongeHash200output168ImplTest {
     @Tag("stringVersion")
     @Tag("streamVersion")
     @Tag("arrayVersion")
-    @DisplayName("Hashing string with Stream and Array: Should not throw any exceptions")
-    void hashingLargeStringWithStreamShouldNotThrowAnyExceptions() throws IOException {
+    @DisplayName("Hashing a long text string using both stream and array should match")
+    void testHashingLongTextStringMatchesForStreamAndArray() throws IOException {
       // given
       final String stringToHash =
           "HelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHelloHello"
@@ -388,8 +380,8 @@ public class SpongeHash200output168ImplTest {
     }
 
     @Test
-    @DisplayName("Test Hash Stream Throws Exception")
-    void testHashStreamThrowsException() throws IOException {
+    @DisplayName("Hashing should correctly throw exception on InputStream error")
+    void testHashingHandlesInputStreamExceptionsCorrectly() throws IOException {
       // given
       final InputStream mockInputStream = mock(InputStream.class);
       when(mockInputStream.readNBytes(any(), anyInt(), anyInt())).thenThrow(IOException.class);

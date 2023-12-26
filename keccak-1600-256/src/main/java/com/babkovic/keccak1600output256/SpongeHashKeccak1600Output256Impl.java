@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public class SpongeHashKeccak1600Impl implements SpongeHash<long[]> {
+public class SpongeHashKeccak1600Output256Impl implements SpongeHash<long[]> {
 
   private final SpongePermutation<long[]> spongePermutation;
 
-  public SpongeHashKeccak1600Impl(final SpongePermutation<long[]> spongePermutation) {
+  public SpongeHashKeccak1600Output256Impl(final SpongePermutation<long[]> spongePermutation) {
     this.spongePermutation = spongePermutation;
   }
 
