@@ -13,7 +13,6 @@ import com.babkovic.api.SpongePermutation;
 
 public class PermutationImpl implements SpongePermutation<byte[]> {
 
-
   @Override
   public void permute(final byte[] state) {
     for (int i = 0; i < ROUNDS; i++) {

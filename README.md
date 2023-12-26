@@ -51,5 +51,6 @@ hashImpl.
 
 hash(message);
 ```
+
 Where messageSize is the size of the message in bits and the message is a stream of data.
 
