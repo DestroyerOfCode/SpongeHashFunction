@@ -2,7 +2,7 @@ plugins {
     id("java")
 }
 
-group = "com.babkovic"
+group = "io.github.destroyerofcode"
 version = "1.0"
 
 repositories {

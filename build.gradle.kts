@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.babkovic"
+group = "io.github.destroyerofcode"
 version = "1.0"
 
 repositories {
@@ -18,7 +18,7 @@ publishing {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
 
-            groupId = "com.babkovic"
+            groupId = "io.github.destroyerofcode"
             artifactId = "keccak"
             version = "1.0-SNAPSHOT"
         }
