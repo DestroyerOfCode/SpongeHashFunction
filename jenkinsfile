@@ -6,7 +6,9 @@ pipeline {
                 checkout scm
             }
         }
-
+        stage('Build image') {
+            app = docker.build("my-image-name")
+        }
         stage('Run Gradle Test') {
             steps {
                 sh './gradlew clean test'
