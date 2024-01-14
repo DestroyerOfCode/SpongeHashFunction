@@ -13,28 +13,6 @@ repositories {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-
-            groupId = "io.github.destroyerofcode"
-            artifactId = "keccak"
-            version = "1.0-SNAPSHOT"
-        }
-    }
-    repositories {
-        maven {
-            name = "sponge-hash"
-            url = uri("https://nexus.zentity.com/repository/maven-public/")
-
-            credentials {
-                username = project.properties["repoUser"] as String
-                password = project.properties["repoPassword"] as String
-            }
-        }
-    }
-}
 dependencies {
     implementation(project(":keccak-200-168"))
     implementation(project(":keccak-1600-256"))
