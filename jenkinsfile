@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Run Gradle Test') {
+            steps {
+                sh './gradlew clean test'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution complete.'
+        }
+
+        success {
+            echo 'Pipeline succeeded.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
+        }
+
+
+    }
+}
