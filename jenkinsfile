@@ -7,7 +7,13 @@ pipeline {
             }
         }
         stage('Build image') {
-            app = docker.build("my-image-name")
+            steps {
+                echo 'Starting to build docker image'
+                    script {
+                        def customImage = docker.build("my-image")
+                        customImage.push()
+                    }
+                }
         }
         stage('Run Gradle Test') {
             steps {
