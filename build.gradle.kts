@@ -1,10 +1,14 @@
 plugins {
     id("java")
-    `maven-publish`
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 group = "io.github.destroyerofcode"
-version = "1.0"
+version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -19,6 +23,7 @@ dependencies {
     implementation(project(":sponge-api"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+
 }
 
 tasks.test {
