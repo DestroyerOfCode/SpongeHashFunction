@@ -6,15 +6,6 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Build image') {
-            steps {
-                echo 'Starting to build docker image'
-                    script {
-                        def customImage = docker.build("my-image")
-                        customImage.push()
-                    }
-                }
-        }
         stage('Run Gradle Test') {
             steps {
                 sh './gradlew clean test'

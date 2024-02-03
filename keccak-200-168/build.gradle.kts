@@ -5,10 +5,15 @@ plugins {
 }
 
 group = "io.github.destroyerofcode"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 dependencies {
@@ -24,10 +29,9 @@ tasks.test {
     useJUnitPlatform()
 }
 
-
-java {
-    withJavadocJar()
-    withSourcesJar()
+tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.named("javadoc"))
 }
 
 val isReleaseVersion: Boolean = version.toString().endsWith("SNAPSHOT").let { !it }

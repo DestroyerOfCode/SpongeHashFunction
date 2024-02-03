@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.destroyerofcode"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -94,4 +94,9 @@ configure<SigningExtension> {
 }
 tasks.withType<Sign> {
     onlyIf { isReleaseVersion }
+}
+
+tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.named("javadoc"))
 }

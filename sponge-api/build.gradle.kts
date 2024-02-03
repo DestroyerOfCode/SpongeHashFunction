@@ -5,16 +5,27 @@ plugins {
 }
 
 group = "io.github.destroyerofcode"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
 }
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 val testArtifacts: Configuration by configurations.creating
 
 tasks.register<Jar>("testJar") {
     archiveClassifier.set("tests")
     from(sourceSets["test"].output)
+}
+
+tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.named("javadoc"))
 }
 
 artifacts {
@@ -54,7 +65,7 @@ publishing {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
             groupId = "io.github.destroyerofcode"
-            artifactId = "spongehash"
+            artifactId = "sponge-api"
             version = this.version
 
             pom {
