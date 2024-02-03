@@ -11,6 +11,11 @@ pipeline {
                 sh './gradlew clean test'
             }
         }
+        stage('Run Gradle publish') {
+            steps {
+                sh './gradlew clean publish'
+            }
+        }
     }
 
     post {
