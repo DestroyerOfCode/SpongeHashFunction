@@ -6,10 +6,14 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Run Gradle Test') {
             steps {
                 sh './gradlew clean test'
+            }
+        }
+        stage('Run Gradle publish') {
+            steps {
+                sh './gradlew clean publish'
             }
         }
     }
